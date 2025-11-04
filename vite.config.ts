@@ -67,5 +67,19 @@ export default defineConfig({
         secure: false,
       },
     },
+    // Configuración para manejar el enrutamiento del lado del cliente
+    historyApiFallback: true,
+  },
+  // Configuración para el build
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+        },
+      },
+    },
   },
 })

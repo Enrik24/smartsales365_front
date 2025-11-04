@@ -1,8 +1,9 @@
+// src/components/admin/users/UserForm.tsx
+
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { userAdminSchema } from '@/lib/validators';
 import { User } from '@/types';
+import { userAdminSchema, UserAdminFormData } from '@/lib/validators/user';
 import { useEffect } from 'react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog';
@@ -11,27 +12,70 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 
-type UserFormData = z.infer<typeof userAdminSchema>;
-
 interface UserFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: UserFormData) => void;
-  defaultValues: User | null;
+  onSubmit: (data: UserAdminFormData) => void;
+  defaultValues: Partial<User> | null;
 }
 
 const UserForm = ({ open, onOpenChange, onSubmit, defaultValues }: UserFormProps) => {
-  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<UserFormData>({
+  const { 
+    register, 
+    handleSubmit, 
+    control, 
+    reset, 
+    formState: { errors, isSubmitting } 
+  } = useForm<UserAdminFormData>({
     resolver: zodResolver(userAdminSchema),
+    defaultValues: {
+      nombre: '',
+      apellido: '',
+      email: '',
+      rol: 'Cliente',
+      telefono: '',
+      direccion: '',
+      password: '',
+      confirm_password: ''
+    }
   });
 
   useEffect(() => {
     if (defaultValues) {
-      reset(defaultValues);
+      // Ensure the role is one of the allowed values
+      const role = ['Administrador', 'Cliente', 'Empleado'].includes(defaultValues.rol || '')
+        ? defaultValues.rol
+        : 'Cliente';
+        
+      reset({
+        ...defaultValues,
+        rol: role as 'Administrador' | 'Cliente' | 'Empleado',
+        password: '',
+        confirm_password: ''
+      });
     } else {
-      reset({ nombre: '', apellido: '', email: '', rol: 'Cliente', telefono: '', password: '', confirm_password: '' });
+      reset({
+        nombre: '',
+        apellido: '',
+        email: '',
+        rol: 'Cliente',
+        telefono: '',
+        direccion: '',
+        password: '',
+        confirm_password: ''
+      });
     }
   }, [defaultValues, reset, open]);
+
+  const handleFormSubmit = (data: UserAdminFormData) => {
+    // Remove empty password fields if they exist
+    const submitData = { ...data };
+    if (!submitData.password) {
+      delete submitData.password;
+      delete submitData.confirm_password;
+    }
+    onSubmit(submitData);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -39,7 +83,7 @@ const UserForm = ({ open, onOpenChange, onSubmit, defaultValues }: UserFormProps
         <DialogHeader>
           <DialogTitle>{defaultValues ? 'Editar Usuario' : 'Añadir Usuario'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="nombre">Nombre</Label>
@@ -61,7 +105,18 @@ const UserForm = ({ open, onOpenChange, onSubmit, defaultValues }: UserFormProps
             <Label htmlFor="telefono">Teléfono (Opcional)</Label>
             <Input id="telefono" {...register('telefono')} />
           </div>
-          <div>
+          
+           <div className="space-y-1">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input id="password" type="password" {...register('password')} placeholder={defaultValues ? 'Dejar en blanco para no cambiar' : ''} />
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="confirm_password">Confirmar Contraseña</Label>
+              <Input id="confirm_password" type="password" {...register('confirm_password')} />
+              {errors.confirm_password && <p className="text-red-500 text-sm mt-1">{errors.confirm_password.message}</p>}
+            </div>
+            <div>
             <Label htmlFor="rol">Rol</Label>
             <Controller
               name="rol"
@@ -79,16 +134,6 @@ const UserForm = ({ open, onOpenChange, onSubmit, defaultValues }: UserFormProps
               )}
             />
           </div>
-           <div className="space-y-1">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input id="password" type="password" {...register('password')} placeholder={defaultValues ? 'Dejar en blanco para no cambiar' : ''} />
-              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="confirm_password">Confirmar Contraseña</Label>
-              <Input id="confirm_password" type="password" {...register('confirm_password')} />
-              {errors.confirm_password && <p className="text-red-500 text-sm mt-1">{errors.confirm_password.message}</p>}
-            </div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Guardando...' : 'Guardar'}

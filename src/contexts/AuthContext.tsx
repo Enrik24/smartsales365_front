@@ -1,6 +1,8 @@
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { authService } from '@/api/services/authService';
-import { AuthState, User, RegisterData } from '@/types/auth';
+import { userService } from '@/api/services/userService';
+import { AuthState, User, RegisterData, UserRole } from '@/types/auth';
+import axiosClient from '@/api/axiosClient';
 
 interface LoginResponse {
   access: string;
@@ -31,6 +33,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   register: (data: RegisterData) => Promise<boolean>;
+  updateUser: (userData: Partial<User>) => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -38,6 +41,7 @@ export const AuthContext = createContext<AuthContextType>({
   login: async () => false,
   logout: async () => {},
   register: async () => false,
+  updateUser: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -47,7 +51,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setAuthState(prev => ({ ...prev, loading: true, error: null }));
       const token = localStorage.getItem('authToken');
-      
       if (!token) {
         setAuthState(prev => ({
           ...prev,
@@ -59,23 +62,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      const { data, error } = await authService.getCurrentUser();
+      const { data: userData, error } = await authService.getCurrentUser();
       
-      if (error || !data) {
+      if (error || !userData) {
         throw error || new Error('Failed to load user data');
       }
 
+      // OBTENER ROLES DEL USUARIO - NUEVO CÓDIGO
+      let userRoles: any[] = [];
+      try {
+        const rolesResponse = await axiosClient.get(`/api/auth/usuarios/${userData.id}/roles/`);
+        userRoles = rolesResponse.data;
+      } catch (rolesError) {
+        console.warn('Could not fetch user roles:', rolesError);
+      }
+      // Check if user is admin based on role or roles array
+      //const roles = userData.roles || [];
+      //const isAdmin = userData.rol === 'Administrador' || 
+      //               roles.some((role: any) => role.nombre_rol === 'Administrador');
+      
+      
+      // Check if user is admin based on roles
+      const isAdmin = userRoles.some(role => role.nombre_rol === 'Administrador');
+      
+      // Map roles
+      const mappedRoles: UserRole[] = userRoles.map(role => ({
+        id: role.id,
+        nombre_rol: role.nombre_rol,
+        nombre: role.nombre_rol,
+        descripcion: role.descripcion
+      }));
+    
       const user: User = {
-        id: data.id.toString(),
-        id_usuario: data.id,
-        email: data.email,
-        nombre: data.nombre,
-        apellido: data.apellido,
-        telefono: data.telefono || '',
-        direccion: data.direccion || '',
-        estado: data.estado || 'activo',
-        fecha_registro: data.fecha_registro || new Date().toISOString(),
-        ultimo_login: data.ultimo_login || new Date().toISOString()
+        id: userData.id.toString(),
+        id_usuario: userData.id,
+        email: userData.email,
+        nombre: userData.nombre,
+        apellido: userData.apellido,
+        telefono: userData.telefono || '',
+        direccion: userData.direccion || '',
+        estado: userData.estado || 'activo',
+        fecha_registro: userData.fecha_registro || new Date().toISOString(),
+        ultimo_login: userData.ultimo_login || new Date().toISOString(),
+        rol: userRoles[0]?.nombre_rol || '', // Usar el primer rol
+        roles: mappedRoles,
+        isAdmin
       };
 
       setAuthState({
@@ -113,18 +144,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const { usuario: userData, access: token } = data;
-      const user: User = {
-        id: userData.id.toString(),
-        id_usuario: userData.id,
-        email: userData.email,
-        nombre: userData.nombre,
-        apellido: userData.apellido,
-        telefono: userData.telefono || '',
-        direccion: userData.direccion || '',
-        estado: userData.estado || '',
-        fecha_registro: userData.fecha_registro || new Date().toISOString(),
-        ultimo_login: userData.ultimo_login || new Date().toISOString()
-      };
+          // NUEVO: Obtener roles del usuario después del login
+          let userRoles: any[] = [];
+          try {
+            const rolesResponse = await axiosClient.get(`/api/auth/usuarios/me/roles/`);
+            userRoles = rolesResponse.data;
+          } catch (rolesError) {
+            console.warn('Could not fetch user roles after login:', rolesError);
+          }
+
+          // Check if user is admin based on roles
+      const isAdmin = userRoles.some((role: any) => role.nombre_rol === 'Administrador');
+
+          const user: User = {
+            id: userData.id.toString(),
+            id_usuario: userData.id,
+            email: userData.email,
+            nombre: userData.nombre,
+            apellido: userData.apellido,
+            telefono: userData.telefono || '',
+            direccion: userData.direccion || '',
+            estado: userData.estado || '',
+            fecha_registro: userData.fecha_registro || new Date().toISOString(),
+            ultimo_login: userData.ultimo_login || new Date().toISOString(),
+            rol: userRoles[0]?.nombre_rol || userData.rol || '',
+            isAdmin,
+            roles: userRoles.map((role: any) => ({
+              id: role.id,
+              nombre_rol: role.nombre_rol,
+              nombre: role.nombre_rol,
+              descripcion: role.descripcion
+            }))
+          };
 
       localStorage.setItem('authToken', token);
       localStorage.setItem('refreshToken', data.refresh);
@@ -151,40 +202,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await authService.logout();
+      const success = await authService.logout();
+      if (!success) {
+        console.warn('Logout may not have completed successfully on the server');
+      }
     } catch (error) {
       console.error('Logout error:', error);
+      // Even if there's an error, we still want to clear the local state
     } finally {
+      // Clear all auth-related data
       localStorage.removeItem('authToken');
-      setAuthState(initialAuthState);
+      localStorage.removeItem('refreshToken');
+      
+      // Reset the auth state
+      setAuthState({
+        ...initialAuthState,
+        loading: false,
+        error: null
+      });
     }
   };
   
-  const register = async (data: { email: string; password: string; nombre: string; apellido: string }): Promise<boolean> => {
+  const register = async (data: { email: string; password: string; confirm_password: string; nombre: string; apellido: string }): Promise<boolean> => {
     try {
       setAuthState(prev => ({ ...prev, loading: true, error: null }));
       
       const { data: authData, error } = await authService.register({
         email: data.email,
         password: data.password,
+        confirm_password: data.confirm_password,
         nombre: data.nombre,
         apellido: data.apellido,
+        rol: 'Cliente' // El backend manejará la asignación del rol
       });
       
       if (error || !authData) {
         throw error || new Error('Registration failed');
       }
 
-      const { user: userData, access: token } = authData;
+      const { usuario: userData, access: token } = authData;
+      
+      // New users are not admins by default
+      const isAdmin = false;
+      
       const user: User = {
-        id: userData.id_usuario.toString(),
-        id_usuario: userData.id_usuario,
+        id: userData.id.toString(),
+        id_usuario: userData.id,
         email: userData.email,
         nombre: userData.nombre,
         apellido: userData.apellido,
+        telefono: userData.telefono || '',
+        direccion: userData.direccion || '',
+        estado: userData.estado || 'activo',
+        fecha_registro: userData.fecha_registro || new Date().toISOString(),
+        ultimo_login: userData.ultimo_login || new Date().toISOString(),
+        rol: userData.rol || 'Usuario',
+        roles: [],
+        isAdmin
       };
 
       localStorage.setItem('authToken', token);
+      localStorage.setItem('refreshToken', authData.refresh);
       
       setAuthState({
         isAuthenticated: true,
@@ -206,9 +284,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Función para actualizar los datos del usuario
+  const updateUser = (userData: Partial<User>) => {
+    if (authState.user) {
+      setAuthState(prev => ({
+        ...prev,
+        user: {
+          ...prev.user!,
+          ...userData,
+        },
+      }));
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ authState, login, logout, register }}>
-      {!authState.loading && children}
+    <AuthContext.Provider value={{ authState, login, logout, register, updateUser }}>
+      {children}
     </AuthContext.Provider>
   );
 };

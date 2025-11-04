@@ -10,10 +10,13 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;  // Changed from username to email
   password: string;
+  confirm_password: string;  // Added confirm_password field
   nombre: string;  // Changed from first_name
   apellido: string;  // Changed from last_name
   telefono?: string;
   direccion?: string;
+  rol?: string;
+  roles?: number[];
 }
 
 export interface AuthResponse {
@@ -31,6 +34,12 @@ export interface AuthResponse {
     ultimo_login: string;
     is_active: boolean;
     is_staff: boolean;
+    rol?: string;
+    roles?: Array<{
+      id: number;
+      nombre: string;
+      descripcion?: string;
+    }>;
   };
 }
 
@@ -72,18 +81,53 @@ class AuthService extends BaseService<AuthResponse> {
   
   async register(userData: RegisterData): Promise<ApiResponse<AuthResponse>> {
     try {
-      const response = await axiosClient.post<AuthResponse>(`${this.basePath}register/`, userData);
+      const response = await axiosClient.post<AuthResponse>(`${this.basePath}registro/`, userData);
       return { data: response.data, status: response.status };
     } catch (error) {
       return { error: this.handleError(error), status: (error as any)?.response?.status || 500 };
     }
   }
 
-  async logout(): Promise<void> {
+  async logout(): Promise<boolean> {
+    const refreshToken = localStorage.getItem('refreshToken');
+    const accessToken = localStorage.getItem('authToken');
+    
+    // Clear local auth state first to ensure the user is logged out on the client side
+    this.clearAuth();
+    
+    if (!refreshToken) {
+      console.warn('No refresh token available for server-side logout');
+      return true; // Still return true since we cleared local state
+    }
+
     try {
-      await axiosClient.post(`${this.basePath}logout/`);
-    } finally {
-      this.clearAuth();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+      
+      // Add Authorization header if access token is available
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      await axiosClient.post(
+        `${this.basePath}logout/`, 
+        { refresh: refreshToken },
+        {
+          headers,
+          // Don't throw on 400/500 errors since we've already cleared local state
+          //validateStatus: () => true
+          validateStatus: (status) => status < 500 // Aceptar 400 como "éxito" para logout
+        }
+      );
+      console.log('✅ Logout exitoso en el servidor');
+      return true;
+    } catch (error) {
+      // Even if there's an error, we've already cleared local state
+      console.warn('Error during server-side logout (non-critical):', error);
+      
+      return true;
     }
   }
 
@@ -121,10 +165,31 @@ class AuthService extends BaseService<AuthResponse> {
 
   async getCurrentUser() {
     try {
-      const response = await axiosClient.get<AuthResponse['usuario']>(`${this.basePath}user/`);
+      // Get user data
+      const userResponse = await axiosClient.get<AuthResponse['usuario']>(`${this.basePath}usuarios/me/`);
+      
+      // Get user roles if user ID is available
+      let roles = [];
+      if (userResponse.data?.id) {
+        try {
+          const rolesResponse = await axiosClient.get(`${this.basePath}usuarios/me/roles/`);
+          roles = rolesResponse.data || [];
+        } catch (roleError) {
+          console.error('Error fetching user roles:', roleError);
+          // Continue without roles if there's an error
+        }
+      }
+
+      // Combine user data with roles
+      const userWithRoles = {
+        ...userResponse.data,
+        roles: roles,
+        rol: roles.length > 0 ? roles[0].nombre_rol : null
+      };
+
       return { 
-        data: response.data, 
-        status: response.status 
+        data: userWithRoles, 
+        status: userResponse.status 
       };
     } catch (error) {
       return { 

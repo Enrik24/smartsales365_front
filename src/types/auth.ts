@@ -1,3 +1,10 @@
+export interface UserRole {
+  id: number;
+  nombre_rol: string;
+  nombre?: string; // For backward compatibility
+  descripcion?: string;
+}
+
 export interface User {
   id: string;
   id_usuario: number;
@@ -10,6 +17,8 @@ export interface User {
   fecha_registro?: string;
   ultimo_login?: string;
   rol?: string;
+  roles?: UserRole[];
+  isAdmin?: boolean;
 }
 
 export interface AuthState {
@@ -28,8 +37,11 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
+  confirm_password: string;
   nombre: string;
   apellido: string;
   telefono?: string;
   direccion?: string;
+  rol?: string;
+  roles?: number[];
 }

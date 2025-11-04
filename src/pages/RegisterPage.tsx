@@ -20,17 +20,26 @@ const RegisterPage = () => {
     resolver: zodResolver(registerSchema),
   });
 
-  const onSubmit = async (data: RegisterFormData) => {
+  const onSubmit = async (formData: RegisterFormData) => {
     setError(null);
     try {
-      const success = await registerUser(data);
+      const { confirm_password, ...registrationData } = formData;
+      const success = await registerUser({
+        ...registrationData,
+        confirm_password, // Include confirm_password in the registration data
+        telefono: '',     // Add empty string for optional fields
+        direccion: ''     // Add empty string for optional fields
+      });
+      
       if (success) {
         navigate('/');
       } else {
         setError('No se pudo completar el registro. Inténtalo de nuevo.');
       }
     } catch (e: any) {
-      setError(e.message || 'Ocurrió un error inesperado.');
+      console.error('Registration error:', e);
+      const errorMessage = e.response?.data?.message || e.message || 'Ocurrió un error inesperado.';
+      setError(Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage);
     }
   };
 

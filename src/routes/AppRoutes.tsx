@@ -16,6 +16,7 @@ const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 // Profile Pages
 const ProfileLayout = lazy(() => import('@/components/layout/ProfileLayout'));
 const UserProfile = lazy(() => import('@/pages/profile/UserProfile'));
+const EditProfile = lazy(() => import('@/pages/profile/EditProfile'));
 const SavedItemsPage = lazy(() => import('@/pages/profile/SavedItemsPage'));
 const InvoicesPage = lazy(() => import('@/pages/profile/InvoicesPage'));
 
@@ -49,6 +50,7 @@ const AppRoutes = () => {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/profile" element={<ProfileLayout />}>
               <Route index element={<UserProfile />} />
+              <Route path="editar" element={<EditProfile />} />
               <Route path="saved" element={<SavedItemsPage />} />
               <Route path="invoices" element={<InvoicesPage />} />
             </Route>

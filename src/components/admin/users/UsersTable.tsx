@@ -20,6 +20,7 @@ const UsersTable = ({ users, onEdit, onDelete }: UsersTableProps) => {
             <TableHead>Email</TableHead>
             <TableHead>Rol</TableHead>
             <TableHead>Teléfono</TableHead>
+            <TableHead>Dirección</TableHead>
             <TableHead><span className="sr-only">Acciones</span></TableHead>
           </TableRow>
         </TableHeader>
@@ -28,8 +29,17 @@ const UsersTable = ({ users, onEdit, onDelete }: UsersTableProps) => {
             <TableRow key={user.id}>
               <TableCell className="font-medium">{user.nombre} {user.apellido}</TableCell>
               <TableCell>{user.email}</TableCell>
-              <TableCell>{user.rol}</TableCell>
+              <TableCell>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  user.rol === 'Administrador' 
+                    ? 'bg-purple-100 text-purple-800' 
+                    : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {user.rol || 'Cliente'}
+                </span>
+              </TableCell>
               <TableCell>{user.telefono || 'N/A'}</TableCell>
+              <TableCell className="max-w-xs truncate">{user.direccion || 'N/A'}</TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

@@ -1,16 +1,26 @@
 // Tipos de Autenticación y Usuario
+export type UserRole = 'Administrador' | 'Cliente' | 'Empleado';
+
 export interface User {
+  // Campos principales
   id: string;
   id_usuario: number;
   email: string;
   nombre: string;
   apellido: string;
-  telefono?: string;
-  direccion?: string;
-  estado?: string;
-  fecha_registro?: string;
-  ultimo_login?: string;
-  rol?: string;
+  telefono: string;
+  direccion: string;
+  rol: UserRole;
+  estado: 'Activo' | 'Inactivo';
+  fecha_registro: string;
+  ultimo_login: string | null;
+  
+  // Campos de autenticación
+  is_active: boolean;
+  is_staff: boolean;
+  
+  // Campos opcionales
+  [key: string]: any;
 }
 
 export interface AuthState {
