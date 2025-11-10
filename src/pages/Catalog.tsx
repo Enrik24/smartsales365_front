@@ -1,16 +1,59 @@
-import { useState, useMemo } from 'react';
-import { mockProducts, mockCategories, mockBrands } from '@/lib/mock-data';
+import { useEffect, useMemo, useState } from 'react';
+import { productService } from '@/api/services/productService';
+import { categoryService } from '@/api/services/categoryService';
+import { brandService } from '@/api/services/brandService';
 import ProductCard from '@/components/product/ProductCard';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Label } from '@/components/ui/Label';
 import { Slider } from '@/components/ui/Slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Product } from '@/types';
 
 const Catalog = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState([5000]);
+  const [priceRange, setPriceRange] = useState([15000]);
   const [sortBy, setSortBy] = useState('relevance');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<{ id: string; nombre: string }[]>([]);
+  const [brands, setBrands] = useState<{ id: string; nombre: string }[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // Load products
+        const res = await productService.getAll();
+        if ('error' in res && res.error) throw new Error(res.error.message || 'No se pudieron cargar productos');
+        const payload: any = res.data as any;
+        const list: any[] = Array.isArray(payload)
+          ? payload
+          : (Array.isArray(payload?.results) ? payload.results : (Array.isArray(payload?.data) ? payload.data : []));
+        const mapped: Product[] = list.map((p: any) => ({
+          id: String(p.id),
+          nombre: p.nombre,
+          modelo: p.sku || '',
+          descripcion: p.descripcion || '',
+          precioRegular: Number(p.precio),
+          precioActual: Number(p.precio),
+          stock: Number(p.stock_actual ?? 0),
+          imagenes: [p.imagen_url || ''],
+          categoria: { id: String(p.categoria ?? ''), nombre: p.categoria_nombre || '', descripcion: '' },
+          marca: { id: String(p.marca ?? ''), nombre: p.marca_nombre || '', descripcion: '' },
+          rating: Number(p.rating ?? 0),
+        }));
+        setProducts(mapped);
+
+        // Load categories and brands
+        const [cats, brs] = await Promise.all([categoryService.list(), brandService.list()]);
+        if (cats.data) setCategories((cats.data as any[]).map((c: any) => ({ id: String(c.id), nombre: c.nombre || c.nombre_categoria })));
+        if (brs.data) setBrands((brs.data as any[]).map((b: any) => ({ id: String(b.id), nombre: b.nombre || b.nombre_marca })));
+      } catch {
+        setProducts([]);
+        setCategories([]);
+        setBrands([]);
+      }
+    })();
+  }, []);
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategories(prev =>
@@ -29,32 +72,32 @@ const Catalog = () => {
   };
 
   const filteredAndSortedProducts = useMemo(() => {
-    let products = mockProducts.filter(p => p.precioActual <= priceRange[0]);
+    let list = products.filter(p => p.precioActual <= priceRange[0]);
 
     if (selectedCategories.length > 0) {
-      products = products.filter(p => selectedCategories.includes(p.categoria.id));
+      list = list.filter(p => selectedCategories.includes(p.categoria.id));
     }
 
     if (selectedBrands.length > 0) {
-      products = products.filter(p => selectedBrands.includes(p.marca.id));
+      list = list.filter(p => selectedBrands.includes(p.marca.id));
     }
 
     switch (sortBy) {
       case 'price-asc':
-        products.sort((a, b) => a.precioActual - b.precioActual);
+        list.sort((a, b) => a.precioActual - b.precioActual);
         break;
       case 'price-desc':
-        products.sort((a, b) => b.precioActual - a.precioActual);
+        list.sort((a, b) => b.precioActual - a.precioActual);
         break;
       case 'rating-desc':
-         products.sort((a, b) => b.rating - a.rating);
+         list.sort((a, b) => b.rating - a.rating);
         break;
       default: // relevance
         break;
     }
 
-    return products;
-  }, [selectedCategories, selectedBrands, priceRange, sortBy]);
+    return list;
+  }, [products, selectedCategories, selectedBrands, priceRange, sortBy]);
 
   return (
     <div className="flex flex-col md:flex-row gap-8">
@@ -66,7 +109,7 @@ const Catalog = () => {
         <div className="mb-6">
           <h3 className="font-semibold mb-2">Categorías</h3>
           <div className="space-y-2">
-            {mockCategories.filter(c => c.activo).map(category => (
+            {categories.map(category => (
               <div key={category.id} className="flex items-center space-x-2">
                 <Checkbox id={`cat-${category.id}`} onCheckedChange={() => handleCategoryChange(category.id)} />
                 <Label htmlFor={`cat-${category.id}`} className="font-normal">{category.nombre}</Label>
@@ -79,7 +122,7 @@ const Catalog = () => {
         <div className="mb-6">
           <h3 className="font-semibold mb-2">Marcas</h3>
           <div className="space-y-2">
-            {mockBrands.filter(b => b.activo).map(brand => (
+            {brands.map(brand => (
               <div key={brand.id} className="flex items-center space-x-2">
                 <Checkbox id={`brand-${brand.id}`} onCheckedChange={() => handleBrandChange(brand.id)} />
                 <Label htmlFor={`brand-${brand.id}`} className="font-normal">{brand.nombre}</Label>
@@ -92,12 +135,12 @@ const Catalog = () => {
         <div>
           <h3 className="font-semibold mb-2">Precio</h3>
           <Slider
-            defaultValue={[5000]}
-            max={5000}
+            value={priceRange}
+            max={15000}
             step={100}
             onValueChange={setPriceRange}
           />
-          <p className="text-sm text-gray-600 mt-2">Hasta ${priceRange[0].toLocaleString()}</p>
+          <p className="text-sm text-gray-600 mt-2">Hasta Bs. {priceRange[0].toLocaleString()}</p>
         </div>
       </aside>
 

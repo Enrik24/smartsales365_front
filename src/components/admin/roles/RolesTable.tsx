@@ -20,21 +20,16 @@ const RolesTable = ({ roles, onEdit, onDelete }: RolesTableProps) => {
             <TableHead>Nombre</TableHead>
             <TableHead>Descripción</TableHead>
             <TableHead>Permisos</TableHead>
-            <TableHead>Estado</TableHead>
             <TableHead><span className="sr-only">Acciones</span></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {roles.map((role) => (
             <TableRow key={role.id}>
-              <TableCell className="font-medium">{role.nombre}</TableCell>
+              <TableCell className="font-medium">{role.nombre_rol}</TableCell>
               <TableCell>{role.descripcion}</TableCell>
               <TableCell>{role.permissionIds?.length || 0}</TableCell>
-              <TableCell>
-                <Badge variant={role.activo ? 'default' : 'secondary'}>
-                  {role.activo ? 'Activo' : 'Inactivo'}
-                </Badge>
-              </TableCell>
+
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

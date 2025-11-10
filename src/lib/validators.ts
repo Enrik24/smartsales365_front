@@ -42,9 +42,9 @@ export const userAdminSchema = z.object({
 
 
 export const roleSchema = z.object({
-  nombre: z.string().min(3, { message: "El nombre del rol debe tener al menos 3 caracteres." }),
+  nombre_rol: z.string().min(3, { message: "El nombre del rol debe tener al menos 3 caracteres." }),
   descripcion: z.string().min(10, { message: "La descripción debe tener al menos 10 caracteres." }),
-  activo: z.boolean(),
+  //activo: z.boolean(),
   permissionIds: z.array(z.string()).optional(),
 });
 
@@ -56,11 +56,9 @@ export const permissionSchema = z.object({
 export const categorySchema = z.object({
     nombre: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
     descripcion: z.string().min(10, { message: "La descripción debe tener al menos 10 caracteres." }),
-    activo: z.boolean(),
 });
 
 export const brandSchema = z.object({
     nombre: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }),
     descripcion: z.string().min(10, { message: "La descripción debe tener al menos 10 caracteres." }),
-    activo: z.boolean(),
 });

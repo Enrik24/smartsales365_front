@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import Swal from 'sweetalert2';
 import { api } from '@/config';
+import { logExitoso, logFallido } from '@/lib/bitacora';
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -130,6 +131,8 @@ const EditProfile = () => {
       } else {
         await showSuccessAlert('¡Éxito!', 'Tu perfil ha sido actualizado correctamente.');
       }
+      // Bitácora
+      void logExitoso('PERFIL_EDITADO');
       
       // Navegar de vuelta al perfil
       navigate('/profile');
@@ -137,6 +140,8 @@ const EditProfile = () => {
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Error al actualizar el perfil';
       await showErrorAlert('Error', errorMessage);
+      // Bitácora
+      void logFallido('PERFIL_EDICION_FALLIDA');
     } finally {
       setIsLoading(false);
     }

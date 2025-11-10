@@ -3,7 +3,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/Button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/DropdownMenu';
 import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
 
 interface CategoriesTableProps {
   categories: Category[];
@@ -19,7 +18,6 @@ const CategoriesTable = ({ categories, onEdit, onDelete }: CategoriesTableProps)
           <TableRow>
             <TableHead>Nombre</TableHead>
             <TableHead>Descripción</TableHead>
-            <TableHead>Estado</TableHead>
             <TableHead><span className="sr-only">Acciones</span></TableHead>
           </TableRow>
         </TableHeader>
@@ -28,11 +26,6 @@ const CategoriesTable = ({ categories, onEdit, onDelete }: CategoriesTableProps)
             <TableRow key={category.id}>
               <TableCell className="font-medium">{category.nombre}</TableCell>
               <TableCell>{category.descripcion}</TableCell>
-              <TableCell>
-                <Badge variant={category.activo ? 'default' : 'secondary'}>
-                  {category.activo ? 'Activo' : 'Inactivo'}
-                </Badge>
-              </TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

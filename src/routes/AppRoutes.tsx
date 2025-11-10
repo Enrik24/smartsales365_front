@@ -29,8 +29,10 @@ const AdminPermissions = lazy(() => import('@/pages/admin/AdminPermissions'));
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'));
 const AdminBrands = lazy(() => import('@/pages/admin/AdminBrands'));
 const AdminProducts = lazy(() => import('@/pages/admin/AdminProducts'));
-const AdminStock = lazy(() => import('@/pages/admin/AdminStock'));
+const AdminInventory = lazy(() => import('@/pages/admin/AdminInventory'));
 const AdminStockAlerts = lazy(() => import('@/pages/admin/AdminStockAlerts'));
+const AdminLogs = lazy(() => import('@/pages/admin/AdminLogs'));
+const AdminCustomers = lazy(() => import('@/pages/admin/AdminCustomers'));
 
 const AppRoutes = () => {
   return (
@@ -65,11 +67,13 @@ const AppRoutes = () => {
             <Route path="users" element={<AdminUsers />} />
             <Route path="roles" element={<AdminRoles />} />
             <Route path="permissions" element={<AdminPermissions />} />
+            <Route path="customers" element={<AdminCustomers />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="brands" element={<AdminBrands />} />
             <Route path="products" element={<AdminProducts />} />
-            <Route path="stock" element={<AdminStock />} />
+            <Route path="inventory" element={<AdminInventory />} />
             <Route path="stock-alerts" element={<AdminStockAlerts />} />
+            <Route path="logs" element={<AdminLogs />} />
           </Route>
         </Route>
         

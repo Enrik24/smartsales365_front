@@ -1,31 +1,54 @@
-import { Brand } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/DropdownMenu';
 import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 
-interface BrandsTableProps {
-  brands: Brand[];
-  onEdit: (brand: Brand) => void;
-  onDelete: (brand: Brand) => void;
+export interface Customer {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono?: string;
+  direccion?: string;
+  estado: 'Activo' | 'Inactivo';
 }
 
-const BrandsTable = ({ brands, onEdit, onDelete }: BrandsTableProps) => {
+interface CustomersTableProps {
+  customers: Customer[];
+  onEdit: (customer: Customer) => void;
+  onDelete: (customer: Customer) => void;
+}
+
+const CustomersTable = ({ customers, onEdit, onDelete }: CustomersTableProps) => {
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Nombre</TableHead>
-            <TableHead>Descripción</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Teléfono</TableHead>
+            <TableHead>Dirección</TableHead>
+            <TableHead>Estado</TableHead>
             <TableHead><span className="sr-only">Acciones</span></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {brands.map((brand) => (
-            <TableRow key={brand.id}>
-              <TableCell className="font-medium">{brand.nombre}</TableCell>
-              <TableCell>{brand.descripcion}</TableCell>
+          {customers.map((c) => (
+            <TableRow key={c.id}>
+              <TableCell className="font-medium">{c.nombre} {c.apellido}</TableCell>
+              <TableCell>{c.email}</TableCell>
+              <TableCell>{c.telefono || '-'}</TableCell>
+              <TableCell>{c.direccion || '-'}</TableCell>
+              <TableCell>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  (c.estado || '').toLowerCase() === 'activo'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {c.estado}
+                </span>
+              </TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -35,10 +58,10 @@ const BrandsTable = ({ brands, onEdit, onDelete }: BrandsTableProps) => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(brand)}>
+                    <DropdownMenuItem onClick={() => onEdit(c)}>
                       <Edit className="mr-2 h-4 w-4" /> Editar
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onDelete(brand)} className="text-red-500">
+                    <DropdownMenuItem onClick={() => onDelete(c)} className="text-red-500">
                       <Trash2 className="mr-2 h-4 w-4" /> Eliminar
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -52,4 +75,4 @@ const BrandsTable = ({ brands, onEdit, onDelete }: BrandsTableProps) => {
   );
 };
 
-export default BrandsTable;
+export default CustomersTable;

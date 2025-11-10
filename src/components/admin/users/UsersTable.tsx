@@ -19,9 +19,8 @@ const UsersTable = ({ users, onEdit, onDelete }: UsersTableProps) => {
             <TableHead>Nombre</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Rol</TableHead>
-            <TableHead>Teléfono</TableHead>
-            <TableHead>Dirección</TableHead>
-            <TableHead><span className="sr-only">Acciones</span></TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead>Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -38,8 +37,15 @@ const UsersTable = ({ users, onEdit, onDelete }: UsersTableProps) => {
                   {user.rol || 'Cliente'}
                 </span>
               </TableCell>
-              <TableCell>{user.telefono || 'N/A'}</TableCell>
-              <TableCell className="max-w-xs truncate">{user.direccion || 'N/A'}</TableCell>
+              <TableCell>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  (user.estado || '').toLowerCase() === 'activo'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {user.estado || 'N/A'}
+                </span>
+              </TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

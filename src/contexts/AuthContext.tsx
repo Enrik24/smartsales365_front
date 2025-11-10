@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { logExitoso, logFallido } from '@/lib/bitacora';
 import { authService } from '@/api/services/authService';
 import { userService } from '@/api/services/userService';
 import { AuthState, User, RegisterData, UserRole } from '@/types/auth';
@@ -187,7 +188,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading: false,
         error: null,
       });
-
+      // Bitácora
+      void logExitoso('INICIO_SESION');
       return true;
     } catch (error) {
       console.error('Login error:', error);
@@ -196,12 +198,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading: false,
         error: error instanceof Error ? error.message : 'Login failed',
       }));
+      // Bitácora
+      void logFallido('INICIO_SESION_FALLIDO');
       return false;
     }
   };
 
   const logout = async () => {
     try {
+      // Log bitácora ANTES de limpiar tokens (para que incluya Authorization)
+      await logExitoso('CIERRE_SESION');
+
       const success = await authService.logout();
       if (!success) {
         console.warn('Logout may not have completed successfully on the server');
@@ -271,7 +278,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading: false,
         error: null,
       });
-
+      // Bitácora (cliente creado)
+      void logExitoso('REGISTRO_CLIENTE');
       return true;
     } catch (error) {
       console.error('Registration error:', error);
@@ -280,6 +288,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading: false,
         error: error instanceof Error ? error.message : 'Registration failed',
       }));
+      // Bitácora
+      void logFallido('REGISTRO_CLIENTE_FALLIDO');
       return false;
     }
   };
