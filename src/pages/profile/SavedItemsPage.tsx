@@ -37,27 +37,43 @@ const SavedItemsPage = () => {
         const raw = (f as any)?.product ?? (f as any)?.producto;
         let p: any = raw;
         if (!raw) return null;
+        const fetchByIdWithFallback = async (idOrSlug: string | number) => {
+          const r = await productService.getById(idOrSlug);
+          if (!('error' in r) || !r.error) return r.data as any;
+          // fallback: si falla por id, intenta obtener desde listado
+          if (r.status === 404) {
+            const all = await productService.getAll();
+            const payload: any = all.data as any;
+            const arr: any[] = Array.isArray(payload)
+              ? payload
+              : (Array.isArray(payload?.results) ? payload.results : (Array.isArray(payload?.data) ? payload.data : []));
+            const found = arr.find((x: any) => String(x.id) === String(idOrSlug) || String(x.slug) === String(idOrSlug));
+            return found || null;
+          }
+          return null;
+        };
+
         if (typeof raw === 'number') {
-          const r = await productService.getById(raw);
-          if (!r.data) return null;
-          p = r.data;
+          const data = await fetchByIdWithFallback(raw);
+          if (!data) return null;
+          p = data;
         } else if (raw && typeof raw === 'object' && 'id' in raw && Object.keys(raw).length <= 3) {
-          // If only minimal info was included, fetch full product
-          const r = await productService.getById((raw as any).id);
-          if (!r.data) return null;
-          p = r.data;
+          const data = await fetchByIdWithFallback((raw as any).id);
+          if (!data) return null;
+          p = data;
         }
         return {
-          id: String(p.id),
+          id: String(p.slug || p.id),
+          numericId: typeof p.id === 'number' ? p.id : (Number(p.id) || undefined),
           nombre: p.nombre,
           modelo: p.sku || '',
           descripcion: p.descripcion || '',
-          precioRegular: Number(p.precio),
-          precioActual: Number(p.precio),
+          precioRegular: Number(p.precio_original ?? p.precio),
+          precioActual: Number(p.precio_original ?? p.precio),
           stock: Number(p.stock_actual ?? 0),
           imagenes: [p.imagen_url || ''],
-          categoria: { id: String(p.categoria ?? ''), nombre: p.categoria_nombre || '', descripcion: '', activo: true },
-          marca: { id: String(p.marca ?? ''), nombre: p.marca_nombre || '', descripcion: '', activo: true },
+          categoria: { id: String(p.categoria ?? ''), nombre: p.categoria_nombre || '', descripcion: '', activo: true } as any,
+          marca: { id: String(p.marca ?? ''), nombre: p.marca_nombre || '', descripcion: '', activo: true } as any,
           rating: Number(p.rating ?? 0),
         } as Product;
       }))).filter(Boolean) as Product[];
@@ -106,8 +122,8 @@ const SavedItemsPage = () => {
               <ProductCard
                 key={product.id}
                 product={product}
-                initialIsFav={Boolean(favoritesMap[product.id])}
-                initialFavoriteId={favoritesMap[product.id] ?? null}
+                initialIsFav={Boolean(favoritesMap[String(product.numericId ?? product.id)])}
+                initialFavoriteId={favoritesMap[String(product.numericId ?? product.id)] ?? null}
                 onUnfavorite={(productId) => {
                   setItems((prev) => prev.filter((p) => p.id !== productId));
                   setFavoritesMap((prev) => {

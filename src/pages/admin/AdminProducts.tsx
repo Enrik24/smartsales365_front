@@ -65,6 +65,7 @@ const AdminProducts = () => {
 
         return {
           id: String(p.id),
+          slug: p.slug,
           sku: p.sku,
           nombre: p.nombre,
           precio: Number(p.precio),
@@ -77,6 +78,20 @@ const AdminProducts = () => {
           stock_inicial: p.stock_actual != null ? Number(p.stock_actual) : undefined,
           stock_minimo: p.stock_minimo != null ? Number(p.stock_minimo) : undefined,
           estado: (p.estado as 'activo' | 'inactivo' | 'agotado'),
+          // nuevos atributos
+          precio_original: p.precio_original,
+          modelo: p.modelo,
+          voltaje: p.voltaje,
+          garantia_meses: p.garantia_meses != null ? Number(p.garantia_meses) : undefined,
+          eficiencia_energetica: p.eficiencia_energetica,
+          color: p.color,
+          peso: p.peso,
+          alto: p.alto,
+          ancho: p.ancho,
+          profundidad: p.profundidad,
+          costo: p.costo,
+          envio_gratis: p.envio_gratis,
+          destacado: p.destacado,
         } as ProductRow;
       });
       setProducts(rows);
@@ -105,14 +120,27 @@ const AdminProducts = () => {
   const handleSubmit = async (data: ProductFormData) => {
     try {
       if (selected) {
-        const res = await productService.updateMultipart(selected.id, {
+        const res = await productService.updateMultipart(selected.slug ?? selected.id, {
           sku: data.sku,
           nombre: data.nombre,
           descripcion: data.descripcion,
           precio: data.precio,
+          precio_original: data.precio_original,
           categoria: data.categoria,
           marca: data.marca,
           estado: data.estado,
+          modelo: data.modelo,
+          voltaje: data.voltaje,
+          garantia_meses: data.garantia_meses,
+          eficiencia_energetica: data.eficiencia_energetica,
+          color: data.color,
+          peso: data.peso,
+          alto: data.alto,
+          ancho: data.ancho,
+          profundidad: data.profundidad,
+          costo: data.costo,
+          envio_gratis: data.envio_gratis,
+          destacado: data.destacado,
           imagen_file: data.imagen_file,
           ficha_tecnica_file: data.ficha_tecnica_file,
         });
@@ -131,11 +159,24 @@ const AdminProducts = () => {
           nombre: data.nombre,
           descripcion: data.descripcion,
           precio: data.precio,
+          precio_original: data.precio_original,
           categoria: data.categoria,
           marca: data.marca,
           estado: data.estado,
           stock_inicial: data.stock_inicial,
           stock_minimo: data.stock_minimo,
+          modelo: data.modelo,
+          voltaje: data.voltaje,
+          garantia_meses: data.garantia_meses,
+          eficiencia_energetica: data.eficiencia_energetica,
+          color: data.color,
+          peso: data.peso,
+          alto: data.alto,
+          ancho: data.ancho,
+          profundidad: data.profundidad,
+          costo: data.costo,
+          envio_gratis: data.envio_gratis,
+          destacado: data.destacado,
           imagen_file: data.imagen_file,
           ficha_tecnica_file: data.ficha_tecnica_file,
         });
@@ -155,7 +196,7 @@ const AdminProducts = () => {
   const handleDelete = async () => {
     if (!selected) return;
     try {
-      const res = await productService.delete(selected.id);
+      const res = await productService.delete(selected.slug ?? selected.id);
       if ('error' in res && res.error) throw new Error(res.error.message || 'Error al eliminar producto');
       setProducts(prev => prev.filter(p => p.id !== selected.id));
       showToast({ title: '¡Eliminado!', description: 'Producto eliminado', type: 'success' });
@@ -176,11 +217,24 @@ const AdminProducts = () => {
         nombre: selected.nombre,
         descripcion: selected.descripcion,
         precio: selected.precio,
+        precio_original: selected.precio_original,
         categoria: selected.categoria ?? null,
         marca: selected.marca ?? null,
         stock_inicial: selected.stock_inicial,
         stock_minimo: selected.stock_minimo,
         estado: selected.estado,
+        modelo: selected.modelo,
+        voltaje: selected.voltaje,
+        garantia_meses: selected.garantia_meses,
+        eficiencia_energetica: selected.eficiencia_energetica,
+        color: selected.color,
+        peso: selected.peso,
+        alto: selected.alto,
+        ancho: selected.ancho,
+        profundidad: selected.profundidad,
+        costo: selected.costo,
+        envio_gratis: selected.envio_gratis,
+        destacado: selected.destacado,
       }
     : null;
 

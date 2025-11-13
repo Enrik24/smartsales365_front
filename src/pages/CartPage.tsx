@@ -1,12 +1,18 @@
 import { useCart } from '@/hooks/useCart';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Trash2, ShoppingCart } from 'lucide-react';
+ 
 
 const CartPage = () => {
   const { cartItems, updateQuantity, removeFromCart, itemCount, totalPrice } = useCart();
+  const navigate = useNavigate();
+
+  const handleCheckout = async () => {
+    navigate('/checkout');
+  };
 
   if (itemCount === 0) {
     return (
@@ -28,7 +34,7 @@ const CartPage = () => {
         <div className="space-y-4">
           {cartItems.map(item => (
             <Card key={item.product.id} className="flex items-center p-4">
-              <img src={item.product.imagenes[0]} alt={item.product.nombre} className="w-24 h-24 object-cover rounded-md" />
+              <img src={item.product.imagenes?.[0] || '/favicon.svg'} alt={item.product.nombre || 'Producto'} className="w-24 h-24 object-cover rounded-md" />
               <div className="flex-grow ml-4">
                 <h3 className="font-semibold">{item.product.nombre}</h3>
                 <p className="text-sm text-gray-500">${item.product.precioActual.toLocaleString()}</p>
@@ -79,8 +85,8 @@ const CartPage = () => {
             </div>
           </CardContent>
           <CardFooter>
-            <Button asChild className="w-full" size="lg">
-              <Link to="/checkout">Proceder al Checkout</Link>
+            <Button className="w-full" size="lg" onClick={handleCheckout}>
+              Procesar pago
             </Button>
           </CardFooter>
         </Card>

@@ -10,6 +10,8 @@ const Catalog = lazy(() => import('@/pages/Catalog'));
 const ProductPage = lazy(() => import('@/pages/ProductPage'));
 const CartPage = lazy(() => import('@/pages/CartPage'));
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'));
+const PaymentPage = lazy(() => import('@/pages/PaymentPage'));
+const PaymentSuccessPage = lazy(() => import('@/pages/PaymentSuccessPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 
@@ -50,6 +52,9 @@ const AppRoutes = () => {
           <Route element={<ProtectedRoute allowedRoles={['Cliente', 'Administrador']} />}>
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/payment/:pedidoId" element={<PaymentPage />} />
+            {/* <Route path="/payment/success/:pedidoId" element={<PaymentSuccessPage />} /> */}
+            <Route path="/pago/exitoso/" element={<PaymentSuccessPage />} />
             <Route path="/profile" element={<ProfileLayout />}>
               <Route index element={<UserProfile />} />
               <Route path="editar" element={<EditProfile />} />

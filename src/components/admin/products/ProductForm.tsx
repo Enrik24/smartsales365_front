@@ -16,11 +16,24 @@ export interface ProductFormData {
   nombre: string;
   descripcion?: string;
   precio: number | string;
+  precio_original?: number | string;
   categoria: number | null;
   marca: number | null;
   estado: EstadoProducto;
   stock_inicial?: number;
   stock_minimo?: number;
+  modelo?: string;
+  voltaje?: string;
+  garantia_meses?: number;
+  eficiencia_energetica?: string;
+  color?: string;
+  peso?: number | string;
+  alto?: number | string;
+  ancho?: number | string;
+  profundidad?: number | string;
+  costo?: number | string;
+  envio_gratis?: boolean;
+  destacado?: boolean;
   imagen_file?: File | null;
   ficha_tecnica_file?: File | null;
 }
@@ -55,11 +68,24 @@ const ProductForm = ({ open, onOpenChange, onSubmit, defaultValues, categorias, 
       nombre: String(form.get('nombre') || ''),
       descripcion: String(form.get('descripcion') || ''),
       precio: String(form.get('precio') || '0'),
+      precio_original: form.get('precio_original') ? String(form.get('precio_original')) : undefined,
       categoria: categoria ? Number(categoria) : null,
       marca: marca ? Number(marca) : null,
       estado,
       stock_inicial: form.get('stock_inicial') ? Number(form.get('stock_inicial')) : undefined,
       stock_minimo: form.get('stock_minimo') ? Number(form.get('stock_minimo')) : undefined,
+      modelo: form.get('modelo') ? String(form.get('modelo')) : undefined,
+      voltaje: form.get('voltaje') ? String(form.get('voltaje')) : undefined,
+      garantia_meses: form.get('garantia_meses') ? Number(form.get('garantia_meses')) : undefined,
+      eficiencia_energetica: form.get('eficiencia_energetica') ? String(form.get('eficiencia_energetica')) : undefined,
+      color: form.get('color') ? String(form.get('color')) : undefined,
+      peso: form.get('peso') ? String(form.get('peso')) : undefined,
+      alto: form.get('alto') ? String(form.get('alto')) : undefined,
+      ancho: form.get('ancho') ? String(form.get('ancho')) : undefined,
+      profundidad: form.get('profundidad') ? String(form.get('profundidad')) : undefined,
+      costo: form.get('costo') ? String(form.get('costo')) : undefined,
+      envio_gratis: form.get('envio_gratis') === 'on',
+      destacado: form.get('destacado') === 'on',
       imagen_file: (form.get('imagen_file') as File) || null,
       ficha_tecnica_file: (form.get('ficha_tecnica_file') as File) || null,
     };
@@ -89,6 +115,10 @@ const ProductForm = ({ open, onOpenChange, onSubmit, defaultValues, categorias, 
             <div>
               <Label htmlFor="precio">Precio</Label>
               <Input id="precio" name="precio" type="number" step="0.01" defaultValue={String(defaultValues?.precio ?? '')} required />
+            </div>
+            <div>
+              <Label htmlFor="precio_original">Precio original</Label>
+              <Input id="precio_original" name="precio_original" type="number" step="0.01" defaultValue={String((defaultValues?.precio_original as number | string) ?? '')} />
             </div>
             <div>
               <Label htmlFor="categoria">Categoría</Label>
@@ -125,6 +155,54 @@ const ProductForm = ({ open, onOpenChange, onSubmit, defaultValues, categorias, 
               <Input id="stock_minimo" name="stock_minimo" type="number" defaultValue={String(defaultValues?.stock_minimo ?? '')} />
             </div>
             <div>
+              <Label htmlFor="modelo">Modelo</Label>
+              <Input id="modelo" name="modelo" defaultValue={(defaultValues?.modelo as string) || ''} />
+            </div>
+            <div>
+              <Label htmlFor="voltaje">Voltaje</Label>
+              <Input id="voltaje" name="voltaje" defaultValue={(defaultValues?.voltaje as string) || ''} />
+            </div>
+            <div>
+              <Label htmlFor="garantia_meses">Garantía (meses)</Label>
+              <Input id="garantia_meses" name="garantia_meses" type="number" defaultValue={String(defaultValues?.garantia_meses ?? '')} />
+            </div>
+            <div>
+              <Label htmlFor="eficiencia_energetica">Eficiencia energética</Label>
+              <Input id="eficiencia_energetica" name="eficiencia_energetica" defaultValue={(defaultValues?.eficiencia_energetica as string) || ''} />
+            </div>
+            <div>
+              <Label htmlFor="color">Color</Label>
+              <Input id="color" name="color" defaultValue={(defaultValues?.color as string) || ''} />
+            </div>
+            <div>
+              <Label htmlFor="peso">Peso (kg)</Label>
+              <Input id="peso" name="peso" type="number" step="0.01" defaultValue={String((defaultValues?.peso as number | string) ?? '')} />
+            </div>
+            <div>
+              <Label htmlFor="alto">Alto (cm)</Label>
+              <Input id="alto" name="alto" type="number" step="0.01" defaultValue={String((defaultValues?.alto as number | string) ?? '')} />
+            </div>
+            <div>
+              <Label htmlFor="ancho">Ancho (cm)</Label>
+              <Input id="ancho" name="ancho" type="number" step="0.01" defaultValue={String((defaultValues?.ancho as number | string) ?? '')} />
+            </div>
+            <div>
+              <Label htmlFor="profundidad">Profundidad (cm)</Label>
+              <Input id="profundidad" name="profundidad" type="number" step="0.01" defaultValue={String((defaultValues?.profundidad as number | string) ?? '')} />
+            </div>
+            <div>
+              <Label htmlFor="costo">Costo</Label>
+              <Input id="costo" name="costo" type="number" step="0.01" defaultValue={String((defaultValues?.costo as number | string) ?? '')} />
+            </div>
+            <div className="flex items-center gap-2">
+              <input id="envio_gratis" name="envio_gratis" type="checkbox" defaultChecked={Boolean(defaultValues?.envio_gratis)} />
+              <Label htmlFor="envio_gratis">Envío gratis</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input id="destacado" name="destacado" type="checkbox" defaultChecked={Boolean(defaultValues?.destacado)} />
+              <Label htmlFor="destacado">Destacado</Label>
+            </div>
+            <div>
               <Label htmlFor="imagen_file">Imagen</Label>
               <Input id="imagen_file" name="imagen_file" type="file" accept="image/*" />
             </div>
@@ -143,3 +221,4 @@ const ProductForm = ({ open, onOpenChange, onSubmit, defaultValues, categorias, 
 };
 
 export default ProductForm;
+

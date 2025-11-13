@@ -5,6 +5,7 @@ import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 
 export interface ProductRow {
   id: string;
+  slug?: string;
   sku: string;
   nombre: string;
   precio: number;
@@ -17,6 +18,20 @@ export interface ProductRow {
   descripcion?: string;
   stock_inicial?: number;
   stock_minimo?: number;
+  // Nuevos atributos opcionales para prefilling del formulario
+  precio_original?: number | string;
+  modelo?: string;
+  voltaje?: string;
+  garantia_meses?: number;
+  eficiencia_energetica?: string;
+  color?: string;
+  peso?: number | string;
+  alto?: number | string;
+  ancho?: number | string;
+  profundidad?: number | string;
+  costo?: number | string;
+  envio_gratis?: boolean;
+  destacado?: boolean;
 }
 
 interface ProductsTableProps {

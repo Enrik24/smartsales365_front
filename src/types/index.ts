@@ -60,6 +60,7 @@ export interface Brand {
 
 export interface Product {
   id: string;
+  numericId?: number;
   nombre: string;
   modelo: string;
   descripcion: string;

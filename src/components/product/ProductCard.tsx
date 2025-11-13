@@ -37,13 +37,19 @@ const ProductCard = ({ product, onUnfavorite, initialIsFav, initialFavoriteId }:
         setFavoriteId(null);
         return;
       }
+      const pid = product.numericId ?? (Number(product.id) || undefined);
+      if (!pid) {
+        setIsFav(false);
+        setFavoriteId(null);
+        return;
+      }
       if (typeof initialIsFav !== 'undefined') {
         setIsFav(!!initialIsFav);
         setFavoriteId(initialFavoriteId ?? null);
         return;
       }
       try {
-        const res = await favoriteService.checkFavorite(Number(product.id));
+        const res = await favoriteService.checkFavorite(pid);
         if (res.data) {
           setIsFav(res.data.is_favorite);
           setFavoriteId(res.data.favorite_id ?? null);
@@ -53,20 +59,33 @@ const ProductCard = ({ product, onUnfavorite, initialIsFav, initialFavoriteId }:
       }
     };
     fetchFavorite();
-  }, [authState.isAuthenticated, product.id, initialIsFav, initialFavoriteId]);
+  }, [authState.isAuthenticated, product.id, product.numericId, initialIsFav, initialFavoriteId]);
+
+  const [favPulse, setFavPulse] = useState(false);
 
   const handleToggleFavorite = async () => {
     if (!authState.isAuthenticated || favLoading) return;
     setFavLoading(true);
+    // Optimistic UI: alternar color y estado inmediatamente
+    const prev = isFav;
+    setIsFav(!isFav);
+    // disparar pulso visual inmediato al click
+    setFavPulse(true);
+    const stopPulse = () => setTimeout(() => setFavPulse(false), 600);
     try {
-      if (!isFav) {
-        const res = await favoriteService.create({ usuario: authState.user?.id_usuario, producto: Number(product.id) } as any);
+      const pid = product.numericId ?? (Number(product.id) || undefined);
+      if (!pid) throw new Error('Producto sin identificador numérico');
+      if (!prev) {
+        // estaba en false, ahora marcando como favorito
+        const res = await favoriteService.create({ usuario: authState.user?.id_usuario, producto: pid } as any);
         if (res.data) {
-          setIsFav(true);
           setFavoriteId((res.data as any).id ?? null);
           showToast({ title: 'Guardado en favoritos', description: `${product.nombre} se guardó correctamente.`, type: 'success' });
+        } else {
+          throw new Error('Sin respuesta');
         }
       } else {
+        // estaba en true, ahora quitando
         let targetId = favoriteId;
         if (!targetId) {
           // fallback: buscar en la lista de favoritos
@@ -77,27 +96,32 @@ const ProductCard = ({ product, onUnfavorite, initialIsFav, initialFavoriteId }:
             : (Array.isArray(payload?.results) ? payload.results : (Array.isArray(payload?.data) ? payload.data : []));
           const found = list.find((f) => {
             const raw = f?.product ?? f?.producto;
-            return (typeof raw === 'number' ? Number(raw) : Number(raw?.id)) === Number(product.id);
+            return (typeof raw === 'number' ? Number(raw) : Number(raw?.id)) === pid;
           });
           targetId = found?.id ?? null;
         }
         if (targetId) {
           await favoriteService.delete(targetId);
-          setIsFav(false);
           setFavoriteId(null);
           showToast({ title: 'Quitado de favoritos', description: `${product.nombre} se quitó de favoritos.`, type: 'info' });
           if (onUnfavorite) onUnfavorite(String(product.id));
+        } else {
+          throw new Error('No se encontró favorito');
         }
       }
     } catch (e) {
+      // revertir en error
+      setIsFav(prev);
       showToast({ title: 'Error', description: 'No se pudo actualizar favoritos.', type: 'error' });
     } finally {
       setFavLoading(false);
+      stopPulse();
     }
   };
 
   return (
-    <Card className="flex flex-col">
+    <>
+    <Card className="flex flex-col rounded-lg transition-all duration-300 border-2 border-transparent hover:-translate-y-2 hover:border-primary hover:shadow-lg">
       <CardHeader className="relative">
         <Link to={`/product/${product.id}`}>
           <img src={product.imagenes[0]} alt={product.nombre} className="w-full h-48 object-cover rounded-t-lg" />
@@ -107,9 +131,9 @@ const ProductCard = ({ product, onUnfavorite, initialIsFav, initialFavoriteId }:
           disabled={!authState.isAuthenticated || favLoading}
           onClick={handleToggleFavorite}
           title={!authState.isAuthenticated ? 'Inicia sesión para guardar en favoritos' : (isFav ? 'Quitar de favoritos' : 'Guardar en favoritos')}
-          className={`absolute top-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-full shadow bg-white/90 backdrop-blur transition ${!authState.isAuthenticated ? 'opacity-60 cursor-not-allowed' : 'hover:bg-white'}`}
+          className={`absolute top-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-full shadow border bg-white/90 ${isFav ? 'border-red-500' : 'border-gray-200'} transition ${!authState.isAuthenticated ? 'opacity-60 cursor-not-allowed' : 'hover:bg-white'} ${favPulse ? 'animate-heartbeat' : ''}`}
         >
-          <Heart className={`h-5 w-5 ${isFav ? 'text-red-500 fill-red-500' : 'text-gray-700'}`} />
+          <Heart className={`h-5 w-5 ${isFav ? 'text-red-500' : 'text-gray-700'}`} fill={isFav ? 'currentColor' : 'none'} />
         </button>
       </CardHeader>
       <CardContent className="flex-grow">
@@ -134,6 +158,13 @@ const ProductCard = ({ product, onUnfavorite, initialIsFav, initialFavoriteId }:
         </Button>
       </CardFooter>
     </Card>
+    <style>
+      {`
+        @keyframes heartbeat { 0%, 100% { transform: scale(1); } 25% { transform: scale(1.25); } 50% { transform: scale(1.1); } }
+        .animate-heartbeat { animation: heartbeat 0.5s ease-in-out; }
+      `}
+    </style>
+    </>
   );
 };
 

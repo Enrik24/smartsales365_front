@@ -29,12 +29,13 @@ const Catalog = () => {
           ? payload
           : (Array.isArray(payload?.results) ? payload.results : (Array.isArray(payload?.data) ? payload.data : []));
         const mapped: Product[] = list.map((p: any) => ({
-          id: String(p.id),
+          id: String(p.slug || p.id),
+          numericId: typeof p.id === 'number' ? p.id : (Number(p.id) || undefined),
           nombre: p.nombre,
           modelo: p.sku || '',
           descripcion: p.descripcion || '',
-          precioRegular: Number(p.precio),
-          precioActual: Number(p.precio),
+          precioRegular: Number(p.precio_original ?? p.precio ?? 0),
+          precioActual: Number(p.precio_original ?? p.precio ?? 0),
           stock: Number(p.stock_actual ?? 0),
           imagenes: [p.imagen_url || ''],
           categoria: { id: String(p.categoria ?? ''), nombre: p.categoria_nombre || '', descripcion: '' },
@@ -42,11 +43,29 @@ const Catalog = () => {
           rating: Number(p.rating ?? 0),
         }));
         setProducts(mapped);
+        const maxPrice = Math.max(0, ...mapped.map(p => (isFinite(p.precioActual) ? p.precioActual : 0)));
+        setPriceRange([maxPrice || 0]);
 
         // Load categories and brands
         const [cats, brs] = await Promise.all([categoryService.list(), brandService.list()]);
         if (cats.data) setCategories((cats.data as any[]).map((c: any) => ({ id: String(c.id), nombre: c.nombre || c.nombre_categoria })));
-        if (brs.data) setBrands((brs.data as any[]).map((b: any) => ({ id: String(b.id), nombre: b.nombre || b.nombre_marca })));
+
+        // Build fallback brands from products
+        const derivedMap = new Map<string, { id: string; nombre: string }>();
+        for (const p of mapped) {
+          if (p.marca?.id && p.marca?.nombre && !derivedMap.has(p.marca.id)) {
+            derivedMap.set(p.marca.id, { id: p.marca.id, nombre: p.marca.nombre });
+          }
+        }
+        const derived = Array.from(derivedMap.values());
+
+        // Merge API brands (if any) with derived, keeping API names when present
+        const apiBrands = (brs.data as any[] | undefined)?.map((b: any) => ({ id: String(b.id), nombre: b.nombre || b.nombre_marca })) || [];
+        const mergedMap = new Map<string, { id: string; nombre: string }>();
+        for (const b of [...apiBrands, ...derived]) {
+          if (!mergedMap.has(b.id)) mergedMap.set(b.id, b);
+        }
+        setBrands(Array.from(mergedMap.values()));
       } catch {
         setProducts([]);
         setCategories([]);

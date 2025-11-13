@@ -19,13 +19,14 @@ const Home = () => {
           : (Array.isArray(payload?.results) ? payload.results : (Array.isArray(payload?.data) ? payload.data : []));
 
         const mapped: Product[] = list.map((p: any) => ({
-          id: String(p.id),
+          id: String(p.slug || p.id),
+          numericId: typeof p.id === 'number' ? p.id : (Number(p.id) || undefined),
           nombre: p.nombre,
           modelo: p.sku || '',
           descripcion: p.descripcion || '',
           // usamos un solo precio por ahora
-          precioRegular: Number(p.precio),
-          precioActual: Number(p.precio),
+          precioRegular: Number(p.precio_original),
+          precioActual: Number(p.precio_original),
           stock: Number(p.stock_actual ?? 0),
           imagenes: [p.imagen_url || ''],
           categoria: { id: String(p.categoria ?? ''), nombre: p.categoria_nombre || '', descripcion: '', activo: true },
