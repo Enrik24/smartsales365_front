@@ -12,10 +12,12 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 
+type FormDataWithEstado = UserAdminFormData & { estado?: 'activo' | 'inactivo' };
+
 interface UserFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: UserAdminFormData) => void;
+  onSubmit: (data: FormDataWithEstado) => void;
   defaultValues: Partial<User> | null;
 }
 
@@ -25,8 +27,9 @@ const UserForm = ({ open, onOpenChange, onSubmit, defaultValues }: UserFormProps
     handleSubmit, 
     control, 
     reset, 
+    getValues,
     formState: { errors, isSubmitting } 
-  } = useForm<UserAdminFormData>({
+  } = useForm<FormDataWithEstado>({
     resolver: zodResolver(userAdminSchema),
     defaultValues: {
       nombre: '',
@@ -35,6 +38,9 @@ const UserForm = ({ open, onOpenChange, onSubmit, defaultValues }: UserFormProps
       rol: 'Cliente',
       telefono: '',
       direccion: '',
+      // Nuevo: estado por defecto activo
+      // @ts-ignore - el schema podría no incluir estado aún
+      estado: 'activo' as any,
       password: '',
       confirm_password: ''
     }
@@ -46,10 +52,14 @@ const UserForm = ({ open, onOpenChange, onSubmit, defaultValues }: UserFormProps
       const role = ['Administrador', 'Cliente', 'Empleado'].includes(defaultValues.rol || '')
         ? defaultValues.rol
         : 'Cliente';
+      // Normalizar estado a minúsculas para el select
+      const estado = (defaultValues.estado || '').toLowerCase() === 'inactivo' ? 'inactivo' : 'activo';
         
       reset({
         ...defaultValues,
-        rol: role as 'Administrador' | 'Cliente' | 'Empleado',
+        rol: role as 'Administrador' | 'Cliente',
+        // @ts-ignore - el schema podría no incluir estado aún
+        estado: estado as any,
         password: '',
         confirm_password: ''
       });
@@ -61,15 +71,24 @@ const UserForm = ({ open, onOpenChange, onSubmit, defaultValues }: UserFormProps
         rol: 'Cliente',
         telefono: '',
         direccion: '',
+        // @ts-ignore - el schema podría no incluir estado aún
+        estado: 'activo' as any,
         password: '',
         confirm_password: ''
       });
     }
   }, [defaultValues, reset, open]);
 
-  const handleFormSubmit = (data: UserAdminFormData) => {
+  const handleFormSubmit = (data: FormDataWithEstado) => {
     // Remove empty password fields if they exist
-    const submitData = { ...data };
+    const submitData: FormDataWithEstado = { ...data };
+    // Reincorporar 'estado' por si el resolver lo removió del parsed data
+    // @ts-ignore
+    const estado = (getValues('estado') as any) || submitData.estado;
+    if (estado) {
+      // @ts-ignore
+      submitData.estado = estado;
+    }
     if (!submitData.password) {
       delete submitData.password;
       delete submitData.confirm_password;
@@ -101,10 +120,6 @@ const UserForm = ({ open, onOpenChange, onSubmit, defaultValues }: UserFormProps
             <Input id="email" type="email" {...register('email')} />
             {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
           </div>
-          <div>
-            <Label htmlFor="telefono">Teléfono (Opcional)</Label>
-            <Input id="telefono" {...register('telefono')} />
-          </div>
           
            <div className="space-y-1">
               <Label htmlFor="password">Contraseña</Label>
@@ -122,7 +137,7 @@ const UserForm = ({ open, onOpenChange, onSubmit, defaultValues }: UserFormProps
               name="rol"
               control={control}
               render={({ field }) => (
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un rol" />
                   </SelectTrigger>
@@ -134,6 +149,25 @@ const UserForm = ({ open, onOpenChange, onSubmit, defaultValues }: UserFormProps
               )}
             />
           </div>
+          <div>
+          <Label htmlFor="estado">Estado</Label>
+          <Controller
+            // @ts-ignore - el schema podría no incluir estado aún
+            name="estado"
+            control={control}
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value || 'activo'}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activo">Activo</SelectItem>
+                  <SelectItem value="inactivo">Inactivo</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Guardando...' : 'Guardar'}

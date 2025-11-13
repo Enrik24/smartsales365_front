@@ -2,16 +2,44 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import ProductCard from '@/components/product/ProductCard';
 import { Product } from '@/types';
-
-const mockProducts: Product[] = [
-    // Usando placehold.co para las imágenes
-    { id: '1', nombre: 'Refrigerador Inteligente', modelo: 'RFG-2000', descripcion: '...', precioRegular: 1200, precioActual: 999, stock: 15, imagenes: ['https://img-wrapper.vercel.app/image?url=https://placehold.co/400x400/e2e8f0/334155?text=Refrigerador'], categoria: {id: 'c1', nombre: 'Refrigeradores', descripcion: '', activo: true}, marca: {id: 'm1', nombre: 'Samsung', descripcion: '', activo: true} },
-    { id: '2', nombre: 'Lavadora Carga Frontal', modelo: 'LAV-850', descripcion: '...', precioRegular: 800, precioActual: 650, stock: 20, imagenes: ['https://img-wrapper.vercel.app/image?url=https://placehold.co/400x400/e2e8f0/334155?text=Lavadora'], categoria: {id: 'c2', nombre: 'Lavado', descripcion: '', activo: true}, marca: {id: 'm2', nombre: 'LG', descripcion: '', activo: true} },
-    { id: '3', nombre: 'TV OLED 4K 65"', modelo: 'OLED65-C1', descripcion: '...', precioRegular: 2500, precioActual: 2199, stock: 8, imagenes: ['https://img-wrapper.vercel.app/image?url=https://placehold.co/400x400/e2e8f0/334155?text=TV+OLED'], categoria: {id: 'c3', nombre: 'Televisores', descripcion: '', activo: true}, marca: {id: 'm2', nombre: 'LG', descripcion: '', activo: true} },
-    { id: '4', nombre: 'Horno de Microondas', modelo: 'MW-300', descripcion: '...', precioRegular: 150, precioActual: 120, stock: 30, imagenes: ['https://img-wrapper.vercel.app/image?url=https://placehold.co/400x400/e2e8f0/334155?text=Microondas'], categoria: {id: 'c4', nombre: 'Cocina', descripcion: '', activo: true}, marca: {id: 'm3', nombre: 'Panasonic', descripcion: '', activo: true} },
-];
+import { useEffect, useState } from 'react';
+import { productService } from '@/api/services/productService';
 
 const Home = () => {
+  const [items, setItems] = useState<Product[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await productService.getAll();
+        if ('error' in res && res.error) throw new Error(res.error.message || 'No se pudieron cargar productos');
+        const payload: any = res.data as any;
+        const list: any[] = Array.isArray(payload)
+          ? payload
+          : (Array.isArray(payload?.results) ? payload.results : (Array.isArray(payload?.data) ? payload.data : []));
+
+        const mapped: Product[] = list.map((p: any) => ({
+          id: String(p.slug || p.id),
+          numericId: typeof p.id === 'number' ? p.id : (Number(p.id) || undefined),
+          nombre: p.nombre,
+          modelo: p.sku || '',
+          descripcion: p.descripcion || '',
+          // usamos un solo precio por ahora
+          precioRegular: Number(p.precio_original),
+          precioActual: Number(p.precio_original),
+          stock: Number(p.stock_actual ?? 0),
+          imagenes: [p.imagen_url || ''],
+          categoria: { id: String(p.categoria ?? ''), nombre: p.categoria_nombre || '', descripcion: '', activo: true },
+          marca: { id: String(p.marca ?? ''), nombre: p.marca_nombre || '', descripcion: '', activo: true },
+          rating: Number(p.rating ?? 0),
+        }));
+        setItems(mapped);
+      } catch {
+        setItems([]);
+      }
+    })();
+  }, []);
+
   return (
     <div>
       <section className="text-center bg-gray-100 dark:bg-gray-800 p-12 rounded-lg">
@@ -25,7 +53,7 @@ const Home = () => {
       <section className="mt-12">
         <h2 className="text-3xl font-bold text-center mb-8">Productos Destacados</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {mockProducts.map(product => (
+          {items.map(product => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

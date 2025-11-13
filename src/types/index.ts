@@ -1,5 +1,5 @@
 // Tipos de Autenticación y Usuario
-export type UserRole = 'Administrador' | 'Cliente' | 'Empleado';
+export type UserRole = 'Administrador' | 'Cliente';
 
 export interface User {
   // Campos principales
@@ -34,9 +34,8 @@ export interface AuthState {
 // Tipos de Roles y Permisos
 export interface Role {
   id: string;
-  nombre: string;
+  nombre_rol: string;
   descripcion: string;
-  activo: boolean;
   permissionIds?: string[];
 }
 
@@ -51,18 +50,17 @@ export interface Category {
   id: string;
   nombre: string;
   descripcion: string;
-  activo: boolean;
 }
 
 export interface Brand {
   id: string;
   nombre: string;
   descripcion: string;
-  activo: boolean;
 }
 
 export interface Product {
   id: string;
+  numericId?: number;
   nombre: string;
   modelo: string;
   descripcion: string;

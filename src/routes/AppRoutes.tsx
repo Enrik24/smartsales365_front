@@ -10,6 +10,8 @@ const Catalog = lazy(() => import('@/pages/Catalog'));
 const ProductPage = lazy(() => import('@/pages/ProductPage'));
 const CartPage = lazy(() => import('@/pages/CartPage'));
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'));
+const PaymentPage = lazy(() => import('@/pages/PaymentPage'));
+const PaymentSuccessPage = lazy(() => import('@/pages/PaymentSuccessPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 
@@ -29,8 +31,10 @@ const AdminPermissions = lazy(() => import('@/pages/admin/AdminPermissions'));
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'));
 const AdminBrands = lazy(() => import('@/pages/admin/AdminBrands'));
 const AdminProducts = lazy(() => import('@/pages/admin/AdminProducts'));
-const AdminStock = lazy(() => import('@/pages/admin/AdminStock'));
+const AdminInventory = lazy(() => import('@/pages/admin/AdminInventory'));
 const AdminStockAlerts = lazy(() => import('@/pages/admin/AdminStockAlerts'));
+const AdminLogs = lazy(() => import('@/pages/admin/AdminLogs'));
+const AdminCustomers = lazy(() => import('@/pages/admin/AdminCustomers'));
 
 const AppRoutes = () => {
   return (
@@ -48,6 +52,9 @@ const AppRoutes = () => {
           <Route element={<ProtectedRoute allowedRoles={['Cliente', 'Administrador']} />}>
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/payment/:pedidoId" element={<PaymentPage />} />
+            {/* <Route path="/payment/success/:pedidoId" element={<PaymentSuccessPage />} /> */}
+            <Route path="/pago/exitoso/" element={<PaymentSuccessPage />} />
             <Route path="/profile" element={<ProfileLayout />}>
               <Route index element={<UserProfile />} />
               <Route path="editar" element={<EditProfile />} />
@@ -65,11 +72,13 @@ const AppRoutes = () => {
             <Route path="users" element={<AdminUsers />} />
             <Route path="roles" element={<AdminRoles />} />
             <Route path="permissions" element={<AdminPermissions />} />
+            <Route path="customers" element={<AdminCustomers />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="brands" element={<AdminBrands />} />
             <Route path="products" element={<AdminProducts />} />
-            <Route path="stock" element={<AdminStock />} />
+            <Route path="inventory" element={<AdminInventory />} />
             <Route path="stock-alerts" element={<AdminStockAlerts />} />
+            <Route path="logs" element={<AdminLogs />} />
           </Route>
         </Route>
         

@@ -19,7 +19,7 @@ interface DeleteConfirmationDialogProps {
 const DeleteConfirmationDialog = ({ open, onOpenChange, onConfirm, itemName }: DeleteConfirmationDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto w-[95vw] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>¿Estás seguro?</DialogTitle>
           <DialogDescription>

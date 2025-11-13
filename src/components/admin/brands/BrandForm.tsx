@@ -1,4 +1,4 @@
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { brandSchema } from '@/lib/validators';
@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
-import { Switch } from '@/components/ui/Switch';
 
 type BrandFormData = z.infer<typeof brandSchema>;
 
@@ -30,14 +29,14 @@ const BrandForm = ({ open, onOpenChange, onSubmit, defaultValues }: BrandFormPro
       if (defaultValues) {
         reset(defaultValues);
       } else {
-        reset({ nombre: '', descripcion: '', activo: true });
+        reset({ nombre: '', descripcion: '' });
       }
     }
   }, [defaultValues, reset, open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto w-[95vw] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{defaultValues ? 'Editar Marca' : 'Añadir Marca'}</DialogTitle>
         </DialogHeader>
@@ -51,20 +50,6 @@ const BrandForm = ({ open, onOpenChange, onSubmit, defaultValues }: BrandFormPro
             <Label htmlFor="descripcion">Descripción</Label>
             <Input id="descripcion" {...register('descripcion')} />
             {errors.descripcion && <p className="text-red-500 text-sm mt-1">{errors.descripcion.message}</p>}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Controller
-              name="activo"
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="activo"
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
-            <Label htmlFor="activo">Activo</Label>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>

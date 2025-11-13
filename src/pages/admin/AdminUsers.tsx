@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Pencil, UserX, UserCheck, Trash2 } from 'lucide-react'; // <-- CAMBIO: Importamos el icono Trash2
 import { userService } from "@/api/services/userService";
 import { toast } from 'sonner';
 import UsersTable from '@/components/admin/users/UsersTable';
 import UserForm from '@/components/admin/users/UserForm';
-import { ColumnDef } from '@tanstack/react-table';
-import { Badge } from '@/components/ui/Badge';
-import Swal from 'sweetalert2'; // <-- CAMBIO: Importamos SweetAlert2
+import Swal from 'sweetalert2'; 
+import type { User } from '@/types';
+import { logExitoso, logFallido } from '@/lib/bitacora';
 
 // Definir el tipo para el usuario de la API
 interface ApiUser {
@@ -22,101 +21,22 @@ interface ApiUser {
   is_active: boolean;
 }
 
-interface TableUser {
-  id: string;
-  id_usuario: number;
-  nombre_completo: string;
-  email: string;
-  rol: string;
-  estado: string;
-  is_active?: boolean;
-  acciones: Array<{
-    label: string;
-    onClick: () => void;
-    icon: string;
-    variant: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
-  }>;
-}
-
 const AdminUsers = () => {
-  const [users, setUsers] = useState<TableUser[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  // <-- CAMBIO: Ya no necesitamos el estado para el diálogo de eliminación
-  const [selectedUser, setSelectedUser] = useState<Partial<TableUser> | null>(null);
+  const [selectedUser, setSelectedUser] = useState<Partial<User> | null>(null);
 
-  // Definición de columnas para la tabla
-  const columns: ColumnDef<TableUser>[] = [
-    {
-      accessorKey: 'nombre_completo',
-      header: 'Nombre',
-      cell: ({ row }) => (
-        <div className="font-medium">
-          {row.getValue('nombre_completo')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'email',
-      header: 'Correo Electrónico',
-    },
-    {
-      accessorKey: 'rol',
-      header: 'Rol',
-      cell: ({ row }) => (
-        <Badge variant={row.getValue('rol') === 'Administrador' ? 'default' : 'secondary'}>
-          {row.getValue('rol')}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: 'estado',
-      header: 'Estado',
-      cell: ({ row }) => (
-        <Badge variant={row.getValue('estado') === 'Activo' ? 'default' : 'outline'}>
-          {row.getValue('estado')}
-        </Badge>
-      ),
-    },
-    {
-      id: 'acciones',
-      header: 'Acciones',
-      cell: ({ row }) => {
-        const acciones = row.original.acciones || [];
-        return (
-          <div className="flex space-x-2">
-            {acciones.map((accion, index) => (
-              <Button
-                key={index}
-                variant={accion.variant}
-                size="sm"
-                onClick={accion.onClick}
-                className="h-8 w-8 p-0"
-              >
-                <span className="sr-only">{accion.label}</span>
-                {accion.icon === 'edit' && <Pencil className="h-4 w-4" />}
-                {accion.icon === 'user-x' && <UserX className="h-4 w-4" />}
-                {accion.icon === 'user-check' && <UserCheck className="h-4 w-4" />}
-                {accion.icon === 'trash' && <Trash2 className="h-4 w-4" />}{/* <-- CAMBIO: Renderiza el nuevo icono */}
-              </Button>
-            ))}
-          </div>
-        );
-      },
-    },
-  ];
-
-  const handleOpenForm = (user: Partial<TableUser> | null = null) => {
+  const handleOpenForm = (user: Partial<User> | null = null) => {
     setSelectedUser(user);
     setIsFormOpen(true);
   };
 
-  // <-- CAMBIO: Nueva función para manejar la eliminación con confirmación
-  const handleDeleteUserWithConfirmation = async (user: TableUser) => {
+  const handleDeleteUserWithConfirmation = async (user: User) => {
     const result = await Swal.fire({
       title: '¿Estás seguro?',
-      text: `¡No podrás revertir la eliminación de ${user.nombre_completo}!`,
+      text: `¡No podrás revertir la eliminación de ${user.nombre} ${user.apellido}!`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
@@ -129,26 +49,18 @@ const AdminUsers = () => {
       try {
         await userService.deleteUser(user.id);
         toast.success('Usuario eliminado correctamente');
-        fetchUsers(); // Recargar la lista
+        // Bitácora
+        void logExitoso('USUARIO_ELIMINADO');
+        fetchUsers(); 
       } catch (error) {
         console.error('Error al eliminar usuario:', error);
         toast.error('Error al eliminar el usuario');
+        // Bitácora
+        void logFallido('USUARIO_ELIMINACION_FALLIDA');
       }
     }
   };
 
-  const handleToggleStatus = async (userId: string, isActive: boolean) => {
-    try {
-      await userService.updateStatus(userId, isActive);
-      toast.success(`Usuario ${isActive ? 'activado' : 'desactivado'} correctamente`);
-      fetchUsers();
-    } catch (error) {
-      console.error('Error al cambiar estado del usuario:', error);
-      toast.error('Error al actualizar el estado del usuario');
-    }
-  };
-
-  // <-- CAMBIO: Modificamos fetchUsers para añadir la acción de eliminar y corregir la de editar
   const fetchUsers = async () => {
     setIsLoading(true);
     setError(null);
@@ -160,45 +72,29 @@ const AdminUsers = () => {
         throw new Error(response.error?.message || 'Error al cargar los usuarios');
       }
       
-      const usersData = response.data?.results || response.data || [];
+      const rawData: any = response.data;
+      const usersData: any[] = Array.isArray(rawData)
+        ? rawData
+        : (rawData?.results ?? rawData?.data ?? []);
       
-      const mappedUsers = usersData.map((user: any) => {
-        const userRole = user.roles?.[0]?.nombre_rol || 'Sin rol asignado';
-        const userStatus = user.estado ? 
-          user.estado.charAt(0).toUpperCase() + user.estado.slice(1) : 
-          'Inactivo';
-          
+      const mappedUsers: User[] = usersData.map((u: any) => {
+        const userRole = u.roles?.[0]?.nombre_rol || 'Cliente';
+        const userStatus = u.estado ? u.estado.charAt(0).toUpperCase() + u.estado.slice(1) : 'Inactivo';
         return {
-          id: user.id.toString(),
-          id_usuario: user.id,
-          nombre_completo: `${user.nombre || ''} ${user.apellido || ''}`.trim() || 'Sin nombre',
-          email: user.email,
+          id: u.id?.toString?.() || String(u.id_usuario || ''),
+          id_usuario: u.id,
+          email: u.email || '',
+          nombre: u.nombre || '',
+          apellido: u.apellido || '',
+          telefono: u.telefono || '',
+          direccion: u.direccion || '',
           rol: userRole,
           estado: userStatus,
-          is_active: user.is_active,
-          acciones: [
-            {
-              label: 'Editar',
-              // <-- CAMBIO CLAVE: Llama a handleOpenForm con el objeto usuario completo
-              onClick: () => handleOpenForm(user), 
-              icon: 'edit',
-              variant: 'outline' as const
-            },
-            {
-              label: user.is_active ? 'Desactivar' : 'Activar',
-              onClick: () => handleToggleStatus(user.id.toString(), !user.is_active),
-              icon: user.is_active ? 'user-x' : 'user-check',
-              variant: user.is_active ? 'destructive' : 'default' as const
-            },
-            // <-- CAMBIO: Añadimos la nueva acción de eliminar
-            {
-              label: 'Eliminar',
-              onClick: () => handleDeleteUserWithConfirmation(user),
-              icon: 'trash',
-              variant: 'destructive' as const
-            }
-          ]
-        };
+          fecha_registro: u.fecha_registro || '',
+          ultimo_login: u.ultimo_login ?? null,
+          is_active: !!u.is_active,
+          is_staff: !!u.is_staff,
+        } as User;
       });
       
       setUsers(mappedUsers);
@@ -213,18 +109,84 @@ const AdminUsers = () => {
     }
   };
   
+
   useEffect(() => {
     fetchUsers();
   }, []);
   
-  const handleSaveUser = async (userData: Partial<TableUser>) => {
+  const handleSaveUser = async (userData: any) => {
     try {
-      if (userData.id) {
-        await userService.updateUser(userData.id, userData as any);
+      const desiredEstado = (userData.estado || '').toString().toLowerCase();
+      const desiredRol = userData.rol as string | undefined;
+      // Nunca enviar 'estado' al serializer de perfil; se maneja por endpoints dedicados
+      let { estado: _omitEstado, ...payload } = userData || {};
+      // Remover passwords vacíos si llegan desde otro form
+      if (!payload?.password) {
+        delete (payload as any)?.password;
+        delete (payload as any)?.confirm_password;
+      }
+
+      if (selectedUser?.id) {
+        // Update existing
+        // Mapear rol por nombre a ID y enviarlo como 'roles: [id]' si corresponde
+        if (desiredRol) {
+          const rolesRes = await userService.getRoles();
+          if (!('error' in rolesRes) || !rolesRes.error) {
+            const raw: any = (rolesRes as any).data;
+            const rolesList: any[] = Array.isArray(raw) ? raw : (raw?.results ?? raw?.data ?? []);
+            const match = rolesList.find((r: any) => r?.nombre_rol === desiredRol || r?.nombre === desiredRol);
+            if (match?.id) {
+              (payload as any).roles = [match.id];
+            } else {
+              toast.error(`Rol no encontrado: ${desiredRol}`);
+            }
+          } else {
+            toast.error(rolesRes.error.message || 'Error al obtener roles');
+          }
+        }
+        const upd = await userService.updateUser(selectedUser.id, payload as any);
+        if ('error' in upd && upd.error) throw new Error(upd.error.message || 'Error al actualizar usuario');
+        // Apply estado if provided
+        const currentEstado = (selectedUser.estado || '').toString().toLowerCase();
+        if (desiredEstado && desiredEstado !== currentEstado) {
+          const idStr = String(selectedUser.id);
+          if (desiredEstado === 'inactivo') {
+            const deact = await userService.deactivateUser(idStr);
+            if ('error' in deact && deact.error) throw new Error(deact.error.message || 'Error al desactivar usuario');
+          }
+          if (desiredEstado === 'activo') {
+            const act = await userService.activateUser(idStr);
+            if ('error' in act && act.error) throw new Error(act.error.message || 'Error al activar usuario');
+          }
+        }
         toast.success('Usuario actualizado correctamente');
+        // Bitácora
+        void logExitoso('USUARIO_EDITADO');
       } else {
-        await userService.createUser(userData as any);
+        // Create new via registro endpoint
+        // En registro, el serializer acepta 'rol' por nombre; mantenerlo en payload si existe
+        if (desiredRol) {
+          (payload as any).rol = desiredRol;
+        }
+        const res = await userService.createUser(payload as any);
+        if ('error' in res && res.error) throw new Error(res.error.message || 'Error al crear usuario');
+        // Try to get new user id from payload shape { usuario: {...} }
+        const newId = (res as any)?.data?.usuario?.id ?? (res as any)?.data?.id;
+        // Apply estado if provided and we have id
+        if (newId) {
+          const idStr = String(newId);
+          if (desiredEstado === 'inactivo') {
+            const deact = await userService.deactivateUser(idStr);
+            if ('error' in deact && deact.error) throw new Error(deact.error.message || 'Error al desactivar usuario');
+          }
+          if (desiredEstado === 'activo') {
+            const act = await userService.activateUser(idStr);
+            if ('error' in act && act.error) throw new Error(act.error.message || 'Error al activar usuario');
+          }
+        }
         toast.success('Usuario creado correctamente');
+        // Bitácora
+        void logExitoso('USUARIO_CREADO');
       }
       
       setIsFormOpen(false);
@@ -235,6 +197,8 @@ const AdminUsers = () => {
       console.error('Error al guardar usuario:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error al guardar el usuario';
       toast.error(`Error: ${errorMessage}`);
+      // Bitácora
+      void logFallido(selectedUser?.id ? 'USUARIO_EDICION_FALLIDA' : 'USUARIO_CREACION_FALLIDA');
     }
   };
 
@@ -268,40 +232,12 @@ const AdminUsers = () => {
           </div>
         ) : (
           <div>
-            <div className="mb-4 text-sm text-gray-500">
-              Mostrando {users.length} usuarios
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    {columns.map((column) => (
-                      <th
-                        key={String(column.id || column.accessorKey)}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        {String(column.header || '')}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((user) => (
-                    <tr key={user.id}>
-                      {columns.map((column) => (
-                        <td key={`${user.id}-${column.id || column.accessorKey}`} className="px-6 py-4 whitespace-nowrap">
-                          {column.cell ? (
-                            column.cell({ row: { original: user, getValue: (key: string) => (user as any)[key] } } as any)
-                          ) : (
-                            <>{String((user as any)[column.accessorKey as string])}</>
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <div className="mb-4 text-sm text-gray-500">Mostrando {users.length} usuarios</div>
+            <UsersTable 
+              users={users}
+              onEdit={(u) => handleOpenForm(u)}
+              onDelete={(u) => handleDeleteUserWithConfirmation(u)}
+            />
           </div>
         )}
       </div>
@@ -314,8 +250,6 @@ const AdminUsers = () => {
           defaultValues={selectedUser}
         />
       )}
-      
-      {/* <-- CAMBIO: Eliminamos el DeleteConfirmationDialog, ya no se usa */}
     </div>
   );
 };

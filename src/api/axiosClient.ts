@@ -15,53 +15,41 @@ const axiosClient = axios.create({
   xsrfHeaderName: 'X-CSRFToken',
 });
 
-// Add a response interceptor to handle errors and token refresh
+// Single response interceptor: only attempt refresh if a refresh token exists.
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-    
-    // If error is not 401 or it's a retry request, reject
-    if (error.response?.status !== 401 || originalRequest._retry) {
+    const originalRequest = error.config as any;
+    if (error.response?.status !== 401 || originalRequest?._retry) {
+      return Promise.reject(error);
+    }
+    originalRequest._retry = true;
+
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      // Unauthenticated user accessing a public endpoint: don't redirect; let caller handle it.
       return Promise.reject(error);
     }
 
-    originalRequest._retry = true;
-    
     try {
-      // Try to refresh the token
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
-      
       const response = await axios.post(
         `${API_BASE_URL}/auth/token/refresh/`,
         { refresh: refreshToken },
-        { 
+        {
           withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-          }
+          headers: { 'Content-Type': 'application/json' },
         }
       );
-      
       const { access } = response.data;
-      
-      // Store the new token
       localStorage.setItem('authToken', access);
-      
-      // Update the Authorization header
+      originalRequest.headers = originalRequest.headers || {};
       originalRequest.headers.Authorization = `Bearer ${access}`;
-      
-      // Retry the original request
       return axiosClient(originalRequest);
-    } catch (error) {
-      // If refresh token fails, clear auth and redirect to login
+    } catch (refreshError) {
       localStorage.removeItem('authToken');
       localStorage.removeItem('refreshToken');
-      window.location.href = '/login';
-      return Promise.reject(error);
+      // Do not redirect automatically; allow route guards to handle protected routes.
+      return Promise.reject(refreshError);
     }
   }
 );
@@ -80,50 +68,6 @@ axiosClient.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle errors and refresh token
-axiosClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    
-    // If error is not 401 or it's a retry request, reject
-    if (error.response?.status !== 401 || originalRequest._retry) {
-      return Promise.reject(error);
-    }
-
-    originalRequest._retry = true;
-    
-    try {
-      // Try to refresh the token
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
-      
-      const response = await axios.post(
-        `${API_BASE_URL}/auth/token/refresh/`,
-        { refresh: refreshToken },
-        { withCredentials: true }
-      );
-      
-      const { access } = response.data;
-      
-      // Store the new token
-      localStorage.setItem('authToken', access);
-      
-      // Update the Authorization header
-      originalRequest.headers.Authorization = `Bearer ${access}`;
-      
-      // Retry the original request
-      return axiosClient(originalRequest);
-    } catch (error) {
-      // If refresh token fails, clear auth and redirect to login
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('refreshToken');
-      window.location.href = '/login';
-      return Promise.reject(error);
-    }
-  }
-);
+// Removed duplicate response interceptor.
 
 export default axiosClient;

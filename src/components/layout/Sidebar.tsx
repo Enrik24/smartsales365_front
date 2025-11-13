@@ -1,5 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
-import { X, ChevronDown, Users, Package, BarChart2, Shield, LayoutDashboard, Archive, BellRing } from 'lucide-react';
+import { X, ChevronDown, Users, Package, BarChart2, 
+  Shield, LayoutDashboard, Archive, BellRing, Box, 
+  FolderTree, Tag, ShoppingCart, Warehouse, UserCog, 
+  Key, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/utils/cn';
 
@@ -22,17 +25,27 @@ const navItems: {
   subItems?: SubItem[];
 }[] = [
   { 
-    name: 'Gestión Administrativa', 
+    name: 'Seguridad y acceso', 
     icon: Users,
     subItems: [
-      { name: 'Gestionar Usuario', path: '/admin/users' },
-      { name: 'Gestionar Rol', path: '/admin/roles' },
+      { name: 'Gestionar Usuario', path: '/admin/users', icon: UserCog },
+      { name: 'Gestionar Rol', path: '/admin/roles', icon: Key },
       { name: 'Gestionar Permisos', path: '/admin/permissions', icon: Shield },
-      { name: 'Gestionar Categoría', path: '/admin/categories' },
-      { name: 'Gestionar Marca', path: '/admin/brands' },
+      { name: 'Gestionar Bitacora', path: '/admin/logs', icon: FileText },
     ]
   },
-  { name: 'Gestión Comercial', icon: Package, path: '/admin/products' },
+  { 
+    name: 'Gestión Comercial', 
+    icon: Package,
+    subItems: [
+      { name: 'Gestionar Producto', path: '/admin/products', icon: Box },
+      { name: 'Gestionar Categoria', path: '/admin/categories', icon: FolderTree },
+      { name: 'Gestionar Marca', path: '/admin/brands', icon: Tag },
+      { name: 'Clientes', path: '/admin/customers', icon: Users },
+      { name: 'Ventas', path: '/admin/sales', icon: ShoppingCart },
+      { name: 'Gestionar Inventario', path: '/admin/inventory', icon: Warehouse },
+    ] 
+  },
   {
     name: 'Gestión de Inventario',
     icon: Archive,
