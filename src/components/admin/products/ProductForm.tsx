@@ -172,7 +172,7 @@ const ProductForm = ({ open, onOpenChange, onSubmit, defaultValues, categorias, 
             </div>
             <div>
               <Label htmlFor="stock_inicial">Stock inicial</Label>
-              <Input id="stock_inicial" name="stock_inicial" type="number" defaultValue={String(defaultValues?.stock_inicial ?? '')} disabled={Boolean(defaultValues)} />
+              <Input id="stock_inicial" name="stock_inicial" type="number" defaultValue={String(defaultValues?.stock_inicial ?? '')} />
             </div>
             <div>
               <Label htmlFor="stock_minimo">Stock mínimo</Label>
