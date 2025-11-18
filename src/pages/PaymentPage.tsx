@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { ordersService } from '@/api/services/ordersService';
 import { showToast } from '@/components/ui/toast/Toast';
 import { CreditCard, Loader2 } from 'lucide-react';
+import { logExitoso, logFallido } from '@/lib/bitacora';
 
 const PaymentPage = () => {
   const { pedidoId } = useParams<{ pedidoId: string }>();
@@ -77,29 +78,38 @@ const PaymentPage = () => {
     try {
       localStorage.setItem('lastPedidoId', String(pedidoId));
     } catch {}
-    const res = await ordersService.createStripeCheckout(pedidoId);
+    try {
+      const res = await ordersService.createStripeCheckout(pedidoId);
 
     // --- INICIO DEL BLOQUE DE DEPURACIÓN ---
     console.log("--- INICIANDO DEPURACIÓN ---");
     console.log("1. El objeto 'res' es:", res);
 
-    if (res.error) {
+      if (res.error) {
       console.log("2. Se encontró un error en 'res.error'. Entrando al bloque de error.");
       showToast({ title: 'Error al procesar pago', description: res.error.message || 'Intenta nuevamente.', type: 'error' });
-      setProcessing(false);
-      return;
-    }
+        void logFallido('PAGO_INTENTO_FALLIDO');
+        setProcessing(false);
+        return;
+      }
 
     console.log("3. No se encontró error. 'res.data' es:", res.data);
     console.log("4. El valor de 'res.data?.checkoutUrl' es:", res.data?.checkoutUrl || res.data?.checkout_url);
     console.log("5. ¿Es 'res.data?.checkoutUrl|checkout_url' truthy? (Boolean):", !!(res.data?.checkoutUrl || res.data?.checkout_url));
 
-    if (res.data?.checkoutUrl || res.data?.checkout_url) {
+      if (res.data?.checkoutUrl || res.data?.checkout_url) {
       console.log("6. La condición es VERDADERA. Redirigiendo a Stripe...");
-      window.location.href = (res.data as any).checkoutUrl || (res.data as any).checkout_url;
-    } else {
+        void logExitoso('PAGO_INTENTO_INICIADO');
+        window.location.href = (res.data as any).checkoutUrl || (res.data as any).checkout_url;
+      } else {
       console.log("6. La condición es FALSA. Entrando al bloque 'else'.");
       showToast({ title: 'Error', description: 'No se pudo obtener la URL de pago de Stripe.', type: 'error' });
+        void logFallido('PAGO_INTENTO_FALLIDO');
+        setProcessing(false);
+      }
+    } catch (error: any) {
+      showToast({ title: 'Error al procesar pago', description: error?.message || 'Intenta nuevamente.', type: 'error' });
+      void logFallido('PAGO_INTENTO_FALLIDO');
       setProcessing(false);
     }
     // --- FIN DEL BLOQUE DE DEPURACIÓN ---

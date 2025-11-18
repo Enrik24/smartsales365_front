@@ -19,6 +19,7 @@ const EditProfile = () => {
     apellido: user?.apellido || '',
     telefono: user?.telefono || '',
     direccion: user?.direccion || '',
+    documento_identidad: user?.documento_identidad || '',
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -199,6 +200,15 @@ const EditProfile = () => {
                   onChange={handleInputChange}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="documento_identidad">Documento de identidad</Label>
+              <Input
+                id="documento_identidad"
+                name="documento_identidad"
+                value={formData.documento_identidad}
+                onChange={handleInputChange}
+              />
             </div>
 
             <div className="pt-6 space-y-4">

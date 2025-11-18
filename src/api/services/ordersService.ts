@@ -43,6 +43,21 @@ class OrdersService {
     }
   }
 
+  async getTracking(pedidoId: number | string): Promise<ApiResponse<any>> {
+    try {
+      const res = await axiosClient.get(`${this.base}${pedidoId}/seguimiento/`);
+      return { data: res.data, status: res.status };
+    } catch (error: any) {
+      return {
+        error: {
+          message: error?.response?.data?.message || error.message,
+          status: error?.response?.status,
+        },
+        status: error?.response?.status || 500,
+      };
+    }
+  }
+
   async getById(pedidoId: number | string): Promise<ApiResponse<Order>> {
     try {
       const res = await axiosClient.get(`${this.base}${pedidoId}/`);
@@ -61,6 +76,21 @@ class OrdersService {
   async createStripeCheckout(pedidoId: number | string): Promise<ApiResponse<StripeCheckoutResponse>> {
     try {
       const res = await axiosClient.post(`${this.base}${pedidoId}/checkout-stripe/`);
+      return { data: res.data, status: res.status };
+    } catch (error: any) {
+      return {
+        error: {
+          message: error?.response?.data?.message || error.message,
+          status: error?.response?.status,
+        },
+        status: error?.response?.status || 500,
+      };
+    }
+  }
+
+  async getOrderBySessionId(sessionId: string): Promise<ApiResponse<Order>> {
+    try {
+      const res = await axiosClient.get(`${this.base}stripe/session/${sessionId}/`);
       return { data: res.data, status: res.status };
     } catch (error: any) {
       return {

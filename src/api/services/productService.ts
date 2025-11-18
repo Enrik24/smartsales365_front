@@ -63,6 +63,29 @@ class CategoryService extends BaseService<Category> {
   }
 }
 
+class ShippingCategoryService {
+  private base = '/api/products/categorias-envio/';
+
+  async list(): Promise<ApiResponse<ShippingCategoryDTO[]>> {
+    try {
+      const res = await axiosClient.get(this.base);
+      const payload = res.data as any;
+      const data: ShippingCategoryDTO[] = Array.isArray(payload)
+        ? payload
+        : (Array.isArray(payload?.results) ? payload.results : (Array.isArray(payload?.data) ? payload.data : []));
+      return { data, status: res.status };
+    } catch (error: any) {
+      return {
+        error: {
+          message: error?.response?.data?.message || error.message,
+          status: error?.response?.status,
+        },
+        status: error?.response?.status || 500,
+      };
+    }
+  }
+}
+
 class BrandService extends BaseService<Brand> {
   constructor() {
     super('api/products/marcas/');
@@ -77,10 +100,16 @@ export interface ProductDTO {
   precio: number | string;
   categoria: number | null;
   marca: number | null;
+  categoria_envio?: number | null;
   imagen_url?: string | null;
   ficha_tecnica_url?: string | null;
   estado: 'activo' | 'inactivo' | 'agotado';
   fecha_creacion?: string;
+}
+
+export interface ShippingCategoryDTO {
+  id: number | string;
+  nombre: string;
 }
 
 class ProductService extends BaseService<Product> {
@@ -141,6 +170,7 @@ class ProductService extends BaseService<Product> {
     destacado?: boolean;
     imagen_file?: File | null;
     ficha_tecnica_file?: File | null;
+    categoria_envio?: number | null;
   }): Promise<ApiResponse<ProductDTO>> {
     console.log("IMAGEN QUE LLEGA:", payload.imagen_file);
 console.log("FICHA QUE LLEGA:", payload.ficha_tecnica_file);
@@ -170,6 +200,7 @@ console.log("FICHA QUE LLEGA:", payload.ficha_tecnica_file);
       if (payload.destacado != null) form.append('destacado', String(payload.destacado ? 1 : 0));
       if (payload.imagen_file) form.append('imagen_file', payload.imagen_file);
       if (payload.ficha_tecnica_file) form.append('ficha_tecnica_file', payload.ficha_tecnica_file);
+      if (payload.categoria_envio != null) form.append('categoria_envio', String(payload.categoria_envio));
       const response = await axiosClient.post<ProductDTO>(this.endpoint, form, { headers: { 'Content-Type': 'multipart/form-data' } });
       return { data: response.data, status: response.status };
     } catch (error) {
@@ -203,6 +234,7 @@ console.log("FICHA QUE LLEGA:", payload.ficha_tecnica_file);
     destacado?: boolean;
     imagen_file?: File | null;
     ficha_tecnica_file?: File | null;
+    categoria_envio?: number | null;
   }): Promise<ApiResponse<ProductDTO>> {
     try {
       const form = new FormData();
@@ -230,6 +262,7 @@ console.log("FICHA QUE LLEGA:", payload.ficha_tecnica_file);
       if (payload.destacado != null) form.append('destacado', String(payload.destacado ? 1 : 0));
       if (payload.imagen_file) form.append('imagen_file', payload.imagen_file);
       if (payload.ficha_tecnica_file) form.append('ficha_tecnica_file', payload.ficha_tecnica_file);
+      if (payload.categoria_envio != null) form.append('categoria_envio', String(payload.categoria_envio));
       const response = await axiosClient.patch<ProductDTO>(`${this.endpoint}${id}/`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
       return { data: response.data, status: response.status };
     } catch (error) {
@@ -307,3 +340,4 @@ export const brandService = new BrandService();
 export const productService = new ProductService();
 export const inventoryService = new InventoryService();
 export const favoriteService = new FavoriteService();
+export const shippingCategoryService = new ShippingCategoryService();

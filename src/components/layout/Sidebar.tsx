@@ -47,11 +47,11 @@ const navItems: {
     ] 
   },
   {
-    name: 'Gestión de Inventario',
+    name: 'Ventas y experiencia del cliente',
     icon: Archive,
     subItems: [
-      { name: 'Gestionar Stock', path: '/admin/stock', icon: Archive },
-      { name: 'Alertas de Stock', path: '/admin/stock-alerts', icon: BellRing }
+      { name: 'Pedidos', path: '/admin/ventas', icon: Archive },
+      
     ]
   },
   { 
