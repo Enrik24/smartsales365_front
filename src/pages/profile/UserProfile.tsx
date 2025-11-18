@@ -27,6 +27,10 @@ const UserProfile = () => {
           <p className="text-lg font-medium">{user.apellido}</p>
         </div>
         <div>
+          <label className="text-sm font-medium text-gray-500">Documento de identidad</label>
+          <p className="text-lg font-medium">{user.documento_identidad || 'No especificado'}</p>
+        </div>
+        <div>
           <label className="text-sm font-medium text-gray-500">Email</label>
           <p className="text-lg font-medium">{user.email}</p>
         </div>

@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const registerSchema = z.object({
   nombre: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }),
   apellido: z.string().min(2, { message: "El apellido debe tener al menos 2 caracteres." }),
+  documento_identidad: z.string().min(3, { message: "El documento de identidad debe tener al menos 3 caracteres." }),
   email: z.string().email({ message: "Por favor, introduce un email válido." }),
   password: z.string().min(8, { message: "La contraseña debe tener al menos 8 caracteres." }),
   confirm_password: z.string(),
@@ -17,6 +18,7 @@ export const userAdminSchema = z.object({
   nombre: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }),
   apellido: z.string().min(2, { message: "El apellido debe tener al menos 2 caracteres." }),
   email: z.string().email({ message: "Por favor, introduce un email válido." }),
+  documento_identidad: z.string().min(3, { message: "El documento de identidad debe tener al menos 3 caracteres." }).optional(),
   telefono: z.string().optional(),
   rol: z.enum(['Cliente', 'Administrador']),
   password: z.string().optional(),

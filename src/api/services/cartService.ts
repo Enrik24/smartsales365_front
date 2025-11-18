@@ -16,6 +16,11 @@ export interface CartDTO {
   items: CartItemDTO[];
 }
 
+export interface ShippingCostDTO {
+  costo_envio: number;
+  moneda: string;
+}
+
 class CartService {
   private base = '/api/orders/carrito/';
 
@@ -82,6 +87,21 @@ class CartService {
   async clear(): Promise<ApiResponse<any>> {
     try {
       const res = await axiosClient.post(`${this.base}vaciar/`);
+      return { data: res.data, status: res.status };
+    } catch (error: any) {
+      return {
+        error: {
+          message: error?.response?.data?.message || error.message,
+          status: error?.response?.status,
+        },
+        status: error?.response?.status || 500,
+      };
+    }
+  }
+
+  async calculateShipping(): Promise<ApiResponse<ShippingCostDTO>> {
+    try {
+      const res = await axiosClient.get('/api/products/calcular-envio/');
       return { data: res.data, status: res.status };
     } catch (error: any) {
       return {

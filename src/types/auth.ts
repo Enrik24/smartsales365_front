@@ -13,6 +13,7 @@ export interface User {
   apellido: string;
   telefono?: string;
   direccion?: string;
+  documento_identidad?: string;
   estado?: string;
   fecha_registro?: string;
   ultimo_login?: string;

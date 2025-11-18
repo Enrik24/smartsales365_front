@@ -7,7 +7,7 @@ import { Trash2, ShoppingCart } from 'lucide-react';
  
 
 const CartPage = () => {
-  const { cartItems, updateQuantity, removeFromCart, itemCount, totalPrice } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, itemCount, totalPrice, shippingCost } = useCart();
   const navigate = useNavigate();
 
   const handleCheckout = async () => {
@@ -72,16 +72,16 @@ const CartPage = () => {
             </div>
             <div className="flex justify-between text-gray-500">
               <span>Envío</span>
-              <span>Por calcular</span>
+              <span>{shippingCost > 0 ? `$${shippingCost.toLocaleString()}` : 'Gratis'}</span>
             </div>
             <div className="flex justify-between text-gray-500">
-              <span>Impuestos</span>
-              <span>Por calcular</span>
+              <span>Impuestos (IVA)</span>
+              <span>13%</span>
             </div>
             <hr />
             <div className="flex justify-between font-bold text-lg">
               <span>Total</span>
-              <span>${totalPrice.toLocaleString()}</span>
+              <span>${((totalPrice + shippingCost) * 1.13).toLocaleString()}</span>
             </div>
           </CardContent>
           <CardFooter>

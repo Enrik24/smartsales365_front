@@ -7,11 +7,12 @@ import { useCart } from '@/hooks/useCart';
 import { showToast } from '@/components/ui/toast/Toast';
 import { ordersService } from '@/api/services/ordersService';
 import { useAuth } from '@/hooks/useAuth';
+import { logExitoso, logFallido } from '@/lib/bitacora';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const location = useLocation() as any;
-  const { cartItems } = useCart();
+  const { cartItems, shippingCost } = useCart();
 
   const order = location?.state?.order;
   const { authState } = useAuth();
@@ -34,10 +35,10 @@ const CheckoutPage = () => {
         }))
       : cartItems.map((ci): SummaryItem => ({ name: ci.product.nombre, qty: ci.quantity, price: ci.product.precioActual }));
     const subtotal = items.reduce((s: number, x: SummaryItem) => s + x.qty * x.price, 0);
-    const shipping = 15; // fijo por ahora
-    const total = subtotal + shipping;
+    const shipping = typeof shippingCost === 'number' ? shippingCost : 0;
+    const total = (subtotal + shipping) * 1.13; // incluye IVA 13%
     return { items, subtotal, shipping, total };
-  }, [order, cartItems]);
+  }, [order, cartItems, shippingCost]);
 
   useEffect(() => {
     const dir = authState.user?.direccion?.trim();
@@ -54,17 +55,24 @@ const CheckoutPage = () => {
       return;
     }
     const payload = { direccion_envio: shippingAddress, direccion_facturacion: billingAddress, usar_misma: sameAddress };
-    const res = await ordersService.create(payload);
-    if (res.error) {
-      showToast({ title: 'Error al crear pedido', description: res.error.message || 'Intenta nuevamente.', type: 'error' });
-      return;
-    }
-    showToast({ title: 'Pedido creado', description: 'Tu pedido fue creado correctamente.', type: 'success' });
-    const pedidoId = res.data?.id;
-    if (pedidoId) {
-      navigate(`/payment/${pedidoId}`);
-    } else {
-      navigate('/');
+    try {
+      const res = await ordersService.create(payload);
+      if (res.error) {
+        showToast({ title: 'Error al crear pedido', description: res.error.message || 'Intenta nuevamente.', type: 'error' });
+        void logFallido('PEDIDO_CREACION_FALLIDA');
+        return;
+      }
+      void logExitoso('PEDIDO_CREADO');
+      showToast({ title: 'Pedido creado', description: 'Tu pedido fue creado correctamente.', type: 'success' });
+      const pedidoId = res.data?.id;
+      if (pedidoId) {
+        navigate(`/payment/${pedidoId}`);
+      } else {
+        navigate('/');
+      }
+    } catch (error: any) {
+      showToast({ title: 'Error inesperado', description: error?.message || 'Intenta nuevamente.', type: 'error' });
+      void logFallido('PEDIDO_CREACION_FALLIDA');
     }
   };
 
@@ -111,7 +119,11 @@ const CheckoutPage = () => {
             <div className="mt-4 space-y-1 text-sm">
               <div className="flex justify-between">
                 <span>Envío</span>
-                <span>${summary.shipping.toLocaleString()}</span>
+                <span>{summary.shipping > 0 ? `$${summary.shipping.toLocaleString()}` : 'Gratis'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>IVA</span>
+                <span>13%</span>
               </div>
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>

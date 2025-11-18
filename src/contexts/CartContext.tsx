@@ -41,8 +41,10 @@ const mapApiItemToCartItem = async (it: any): Promise<CartItem | null> => {
     nombre: String(productData.nombre),
     modelo: productData.sku || '',
     descripcion: productData.descripcion || '',
-    precioRegular: Number(productData.precio_original || productData.precio || 0),
-    precioActual: Number(productData.precio || 0),
+    // precioRegular queda como el precio "anterior" o alternativo
+    precioRegular: Number(productData.precio || productData.precio_original || 0),
+    // precioActual usa como fuente principal precio_original (el "precio verdadero")
+    precioActual: Number(productData.precio_original || productData.precio || 0),
     stock: Number(productData.stock_actual || 0),
     imagenes: [makeImg(productData.imagen_url)],
     categoria: { id: String(productData.categoria), nombre: productData.categoria_nombre || '', descripcion: '' },
@@ -62,12 +64,14 @@ interface CartContextType {
   clearCart: () => void;
   itemCount: number;
   totalPrice: number;
+  shippingCost: number;
 }
 
 export const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [shippingCost, setShippingCost] = useState<number>(0);
   const { authState } = useAuth();
 
   // ===================================================================================
@@ -86,6 +90,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const res = await cartService.getCart();
         if (!res.data || !Array.isArray(res.data.items)) {
           setCartItems([]);
+          setShippingCost(0);
           return;
         }
 
@@ -94,6 +99,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         );
 
         setCartItems(items.filter(Boolean) as CartItem[]);
+
+        // Calcular costo de envío basado en el carrito actual
+        try {
+          const ship = await cartService.calculateShipping();
+          if (ship.data && typeof ship.data.costo_envio === 'number') {
+            setShippingCost(Number(ship.data.costo_envio));
+          } else {
+            setShippingCost(0);
+          }
+        } catch {
+          setShippingCost(0);
+        }
 
       } catch (error) {
         console.error('Error al cargar el carrito:', error);
@@ -190,7 +207,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const totalPrice = cartItems.reduce((sum, item) => sum + item.product.precioActual * item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, itemCount, totalPrice }}>
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, itemCount, totalPrice, shippingCost }}>
       {children}
     </CartContext.Provider>
   );

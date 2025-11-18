@@ -3,7 +3,7 @@ import AdminPageHeader from '@/components/admin/shared/AdminPageHeader';
 import ProductsTable, { ProductRow } from '@/components/admin/products/ProductsTable';
 import ProductForm, { ProductFormData, Option } from '@/components/admin/products/ProductForm';
 import DeleteConfirmationDialog from '@/components/admin/shared/DeleteConfirmationDialog';
-import { productService } from '@/api/services/productService';
+import { productService, shippingCategoryService } from '@/api/services/productService';
 import { inventoryService } from '@/api/services/inventoryService';
 import { categoryService as catSvc } from '@/api/services/categoryService';
 import { brandService as brSvc } from '@/api/services/brandService';
@@ -17,6 +17,7 @@ const AdminProducts = () => {
   const [selected, setSelected] = useState<ProductRow | null>(null);
   const [categorias, setCategorias] = useState<Option[]>([]);
   const [marcas, setMarcas] = useState<Option[]>([]);
+  const [categoriasEnvio, setCategoriasEnvio] = useState<Option[]>([]);
 
   const catMap = useMemo(() => Object.fromEntries(categorias.map(c => [String(c.id), c.nombre])), [categorias]);
   const brandMap = useMemo(() => Object.fromEntries(marcas.map(m => [String(m.id), m.nombre])), [marcas]);
@@ -33,9 +34,10 @@ const AdminProducts = () => {
 
   const fetchLookups = async () => {
     try {
-      const [cats, brands] = await Promise.all([catSvc.list(), brSvc.list()]);
+      const [cats, brands, shipCats] = await Promise.all([catSvc.list(), brSvc.list(), shippingCategoryService.list()]);
       if (cats.data) setCategorias(cats.data.map((c: any) => ({ id: c.id, nombre: c.nombre || c.nombre_categoria })));
       if (brands.data) setMarcas(brands.data.map((b: any) => ({ id: b.id, nombre: b.nombre || b.nombre_marca })));
+      if (shipCats.data) setCategoriasEnvio(shipCats.data.map((s: any) => ({ id: s.id, nombre: s.nombre })));
     } catch (e) {
       // no-op
     }
@@ -92,6 +94,7 @@ const AdminProducts = () => {
           costo: p.costo,
           envio_gratis: p.envio_gratis,
           destacado: p.destacado,
+          categoria_envio: p.categoria_envio != null ? Number(p.categoria_envio) : null,
         } as ProductRow;
       });
       setProducts(rows);
@@ -143,6 +146,7 @@ const AdminProducts = () => {
           destacado: data.destacado,
           imagen_file: data.imagen_file,
           ficha_tecnica_file: data.ficha_tecnica_file,
+          categoria_envio: data.categoria_envio ?? null,
         });
         if ('error' in res && res.error) throw new Error(res.error.message || 'Error al actualizar producto');
         // Update inventory fields (only stock_minimo for edit; stock_actual shown as stock_inicial is disabled)
@@ -235,6 +239,7 @@ const AdminProducts = () => {
         costo: selected.costo,
         envio_gratis: selected.envio_gratis,
         destacado: selected.destacado,
+        categoria_envio: (selected as any).categoria_envio ?? null,
       }
     : null;
 
@@ -251,6 +256,7 @@ const AdminProducts = () => {
         defaultValues={defaultValues}
         categorias={categorias}
         marcas={marcas}
+        categoriasEnvio={categoriasEnvio}
       />
 
       <DeleteConfirmationDialog

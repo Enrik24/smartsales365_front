@@ -36,6 +36,7 @@ export interface ProductFormData {
   destacado?: boolean;
   imagen_file?: File | null;
   ficha_tecnica_file?: File | null;
+  categoria_envio?: number | null;
 }
 
 interface ProductFormProps {
@@ -45,18 +46,21 @@ interface ProductFormProps {
   defaultValues: Partial<ProductFormData> | null;
   categorias: Option[];
   marcas: Option[];
+  categoriasEnvio: Option[];
 }
 
-const ProductForm = ({ open, onOpenChange, onSubmit, defaultValues, categorias, marcas }: ProductFormProps) => {
+const ProductForm = ({ open, onOpenChange, onSubmit, defaultValues, categorias, marcas, categoriasEnvio }: ProductFormProps) => {
   const [categoria, setCategoria] = useState<string>('');
   const [marca, setMarca] = useState<string>('');
   const [estado, setEstado] = useState<EstadoProducto>('activo');
+  const [categoriaEnvio, setCategoriaEnvio] = useState<string>('');
 
   useEffect(() => {
     if (open) {
       setCategoria(defaultValues?.categoria != null ? String(defaultValues.categoria) : '');
       setMarca(defaultValues?.marca != null ? String(defaultValues.marca) : '');
       setEstado((defaultValues?.estado as EstadoProducto) || 'activo');
+      setCategoriaEnvio(defaultValues?.categoria_envio != null ? String(defaultValues.categoria_envio) : '');
     }
   }, [open, defaultValues]);
 
@@ -88,6 +92,7 @@ const ProductForm = ({ open, onOpenChange, onSubmit, defaultValues, categorias, 
       destacado: form.get('destacado') === 'on',
       imagen_file: (form.get('imagen_file') as File) || null,
       ficha_tecnica_file: (form.get('ficha_tecnica_file') as File) || null,
+      categoria_envio: categoriaEnvio ? Number(categoriaEnvio) : null,
     };
     onSubmit(data);
   };
@@ -144,6 +149,25 @@ const ProductForm = ({ open, onOpenChange, onSubmit, defaultValues, categorias, 
                 <option value="activo">Activo</option>
                 <option value="inactivo">Inactivo</option>
                 <option value="agotado">Agotado</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="categoria_envio">Categoría de envío</Label>
+              <select
+                id="categoria_envio"
+                name="categoria_envio"
+                value={categoriaEnvio}
+                onChange={(e) => setCategoriaEnvio(e.target.value)}
+                className="w-full border rounded-md h-10 px-3"
+              >
+                <option value="">Seleccione...</option>
+                {categoriasEnvio.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                  {c.nombre}: {c.nombre === "Pequeños" ? "≤ 5 kg" :
+                   c.nombre === "Medianos" ? "> 5 kg y ≤ 25 kg" :
+                   "> 25 kg"}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
