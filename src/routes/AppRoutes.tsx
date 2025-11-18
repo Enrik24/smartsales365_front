@@ -53,7 +53,6 @@ const AppRoutes = () => {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/payment/:pedidoId" element={<PaymentPage />} />
-            {/* <Route path="/orders/:pedidoId" element={<OrderDetailPage />} /> */}
             {/* <Route path="/payment/success/:pedidoId" element={<PaymentSuccessPage />} /> */}
             {/* Ruta para la página de pago exitoso*/}
             <Route path="/pago/exitoso" element={<InvoicesPage />} />
